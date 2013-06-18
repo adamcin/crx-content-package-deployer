@@ -1,4 +1,4 @@
-jenkins-granite-plugin
+jenkins-granite-client
 ======================
 
 Provides Jenkins integration with Adobe Granite 
