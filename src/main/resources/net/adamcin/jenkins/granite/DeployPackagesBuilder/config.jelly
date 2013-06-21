@@ -5,12 +5,12 @@
       See global.jelly for a general discussion about jelly script.
     -->
 
-    <f:entry title="Package ID Filters" field="packageIdFilters">
-        <f:textarea />
+    <f:entry title="Base URL" field="baseUrls" checkUrl="'${rootURL}/plugin/jenkins-granite-client/checkBaseUrls?value='+this.value">
+        <f:expandableTextbox />
     </f:entry>
 
-    <f:entry title="Base URL" field="baseUrl" checkUrl="'${rootURL}/plugin/jenkins-granite-client/checkBaseUrl?value='+this.value">
-        <f:textbox />
+    <f:entry title="Package ID" field="packageIdFilters">
+        <f:expandableTextbox default="*"/>
     </f:entry>
 
     <f:advanced>
@@ -19,7 +19,7 @@
         </f:entry>
 
         <f:entry title="Password" field="password">
-            <f:password />
+            <f:password default="admin"/>
         </f:entry>
 
         <f:entry title="SSHKey Login" field="sshKeyLogin">

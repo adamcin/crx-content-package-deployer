@@ -33,7 +33,7 @@ import java.util.Set;
 public class DeployPackagesBuilder extends Builder implements PackageDeploymentRequest {
 
     private String packageIdFilters;
-    private String baseUrl;
+    private String baseUrls;
     private String username;
     private String password;
     private boolean sshKeyLogin;
@@ -43,11 +43,11 @@ public class DeployPackagesBuilder extends Builder implements PackageDeploymentR
     private String acHandling;
 
     @DataBoundConstructor
-    public DeployPackagesBuilder(String packageIdFilters, String baseUrl, String username, String password,
+    public DeployPackagesBuilder(String packageIdFilters, String baseUrls, String username, String password,
                                  boolean sshKeyLogin, String behavior, boolean recursive, int autosave,
                                  String acHandling) {
         this.packageIdFilters = packageIdFilters;
-        this.baseUrl = baseUrl;
+        this.baseUrls = baseUrls;
         this.username = username;
         this.password = password;
         this.sshKeyLogin = sshKeyLogin;
@@ -70,12 +70,17 @@ public class DeployPackagesBuilder extends Builder implements PackageDeploymentR
         this.packageIdFilters = packageIdFilters;
     }
 
-    public String getBaseUrl() {
-        return baseUrl;
+    public String getBaseUrls() {
+        //return baseUrls;
+        if (baseUrls != null) {
+            return baseUrls.trim();
+        } else {
+            return "";
+        }
     }
 
-    public void setBaseUrl(String baseUrl) {
-        this.baseUrl = baseUrl;
+    public void setBaseUrls(String baseUrls) {
+        this.baseUrls = baseUrls;
     }
 
     public String getUsername() {
@@ -169,9 +174,11 @@ public class DeployPackagesBuilder extends Builder implements PackageDeploymentR
 
         boolean success = true;
 
-        for (Map.Entry<PackId, FilePath> selectedPackage : selectPackages(build, listener).entrySet()) {
-            success = success && selectedPackage.getValue().act(
-                    new PackageDeploymentCallable(this, selectedPackage.getKey(), listener));
+        for (String baseUrl : listBaseUrls()) {
+            for (Map.Entry<PackId, FilePath> selectedPackage : selectPackages(build, listener).entrySet()) {
+                success = success && selectedPackage.getValue().act(
+                        new PackageDeploymentCallable(this, baseUrl, selectedPackage.getKey(), listener));
+            }
         }
         return success;
     }
@@ -263,6 +270,16 @@ public class DeployPackagesBuilder extends Builder implements PackageDeploymentR
         return Collections.unmodifiableMap(filters);
     }
 
+    private List<String> listBaseUrls() {
+        List<String> _baseUrls = new ArrayList<String>();
+        for (String url : getBaseUrls().split("(\\r)?\\n")) {
+            if (url.trim().length() > 0) {
+                _baseUrls.add(url);
+            }
+        }
+        return Collections.unmodifiableList(_baseUrls);
+    }
+
     @Override
     public DescriptorImpl getDescriptor() {
         return (DescriptorImpl) super.getDescriptor();
@@ -281,7 +298,7 @@ public class DeployPackagesBuilder extends Builder implements PackageDeploymentR
             return "Deploy Packages";
         }
 
-        public FormValidation doCheckBaseUrl(@QueryParameter String value) {
+        public FormValidation doCheckBaseUrls(@QueryParameter String value) {
             return FormValidation.ok();
         }
 

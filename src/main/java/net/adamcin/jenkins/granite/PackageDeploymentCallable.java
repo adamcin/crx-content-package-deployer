@@ -6,7 +6,6 @@ import hudson.FilePath;
 import hudson.model.TaskListener;
 import hudson.remoting.VirtualChannel;
 import jenkins.plugins.asynchttpclient.AHC;
-import net.adamcin.granite.client.packman.ACHandling;
 import net.adamcin.granite.client.packman.DetailedResponse;
 import net.adamcin.granite.client.packman.PackId;
 import net.adamcin.granite.client.packman.ResponseProgressListener;
@@ -22,15 +21,17 @@ import java.util.List;
 public final class PackageDeploymentCallable implements FilePath.FileCallable<Boolean>, ResponseProgressListener {
 
     private final PackageDeploymentRequest request;
+    private final String baseUrl;
     private final PackId packId;
     private final TaskListener listener;
     private final PackageInstallOptions options;
     private final ExistingPackageBehavior behavior;
 
-    public PackageDeploymentCallable(PackageDeploymentRequest request, PackId packId, TaskListener listener) {
+    public PackageDeploymentCallable(PackageDeploymentRequest request, String baseUrl, PackId packId, TaskListener listener) {
         this.request = request;
         this.options = request.getPackageInstallOptions();
         this.behavior = request.getExistingPackageBehavior();
+        this.baseUrl = baseUrl;
         this.packId = packId;
         this.listener = listener;
     }
@@ -38,7 +39,7 @@ public final class PackageDeploymentCallable implements FilePath.FileCallable<Bo
     public Boolean invoke(File f, VirtualChannel channel) throws IOException, InterruptedException {
 
         AsyncPackageManagerClient client = new AsyncPackageManagerClient(AHC.instance());
-        client.setBaseUrl(request.getBaseUrl());
+        client.setBaseUrl(baseUrl);
 
         try {
             listener.getLogger().printf("Deploying %s to %s%n", f,

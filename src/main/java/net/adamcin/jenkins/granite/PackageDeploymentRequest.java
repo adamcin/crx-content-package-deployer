@@ -4,8 +4,6 @@ import java.io.Serializable;
 
 public interface PackageDeploymentRequest extends Serializable {
 
-    String getBaseUrl();
-
     String getUsername();
 
     String getPassword();
