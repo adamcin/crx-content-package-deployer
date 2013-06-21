@@ -1,0 +1,48 @@
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+    <!--
+      This jelly script is used for per-project configuration.
+
+      See global.jelly for a general discussion about jelly script.
+    -->
+
+    <f:entry title="Package ID Filters" field="packageIdFilters">
+        <f:textarea />
+    </f:entry>
+
+    <f:entry title="Base URL" field="baseUrl" checkUrl="'${rootURL}/plugin/jenkins-granite-client/checkBaseUrl?value='+this.value">
+        <f:textbox />
+    </f:entry>
+
+    <f:advanced>
+        <f:entry title="Username" field="username">
+            <f:textbox default="admin" />
+        </f:entry>
+
+        <f:entry title="Password" field="password">
+            <f:password />
+        </f:entry>
+
+        <f:entry title="SSHKey Login" field="sshKeyLogin">
+            <f:checkbox />
+        </f:entry>
+
+        <f:entry title="Existing package behavior" field="behavior">
+            <f:select />
+        </f:entry>
+
+        <f:entry title="Install sub-packages" field="recursive">
+            <f:checkbox />
+        </f:entry>
+
+        <f:entry title="Auto Save" field="autosave">
+            <f:number default="1024" />
+        </f:entry>
+
+        <f:entry title="Access Control Handling" field="acHandling">
+            <f:select />
+        </f:entry>
+
+    </f:advanced>
+
+
+</j:jelly>

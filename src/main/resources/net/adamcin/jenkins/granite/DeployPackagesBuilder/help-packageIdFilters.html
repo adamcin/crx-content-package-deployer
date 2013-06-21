@@ -1,0 +1,28 @@
+<div>
+    Specify a list of package ID filters to match against identified Vault packages located in
+    the workspace. Each filter string must occupy its own line.
+
+    A Package ID consists of the group, the name, and the version of a package, separated by
+    colons (':').
+
+    Package ID filters must follow one of three patterns:
+
+    <ul>
+        <li>
+            <tt>group:name:version</tt>
+        </li>
+        <li>
+            <tt>group:name</tt>
+        </li>
+        <li>
+            <tt>name</tt>
+        </li>
+    </ul>
+
+    Each segment in the filter may be either ommitted or replaced with an asterisk ('*') to
+    represent a wildcard.
+
+    Matching packages will be uploaded in the order in which the filters are specified. Only the
+    highest matching version of a package identified by 'group:name' will be deployed, and it will
+    only be deployed once per build step, regardless of the number of matching filters.
+</div>
