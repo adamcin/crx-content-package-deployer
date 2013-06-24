@@ -78,7 +78,7 @@ public final class PackageDeploymentCallable implements FilePath.FileCallable<Bo
                 listener.fatalError(r_upload.getMessage());
             }
         } catch (Exception e) {
-            listener.error("Failed to deploy package: %s", e);
+            e.printStackTrace(listener.fatalError("Failed to deploy package: %s", e.getMessage()));
         }
 
         return false;
