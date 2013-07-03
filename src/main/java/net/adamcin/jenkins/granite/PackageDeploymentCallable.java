@@ -11,8 +11,9 @@ import net.adamcin.granite.client.packman.PackId;
 import net.adamcin.granite.client.packman.ResponseProgressListener;
 import net.adamcin.granite.client.packman.SimpleResponse;
 import net.adamcin.granite.client.packman.async.AsyncPackageManagerClient;
-import net.adamcin.sshkey.commons.Signer;
-import net.adamcin.sshkey.commons.SignerException;
+import net.adamcin.sshkey.api.Signer;
+import net.adamcin.sshkey.api.SignerException;
+import net.adamcin.sshkey.api.SignerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -119,7 +120,7 @@ public final class PackageDeploymentCallable implements FilePath.FileCallable<Bo
 
     private void login(AsyncPackageManagerClient client) throws SignerException, IOException {
         if (request.isSshKeyLogin()) {
-            Signer signer = new Signer();
+            Signer signer = SignerFactory.getFactoryInstance().getInstance();
             List<SSHUserPrivateKey> keys = CredentialsProvider.lookupCredentials(SSHUserPrivateKey.class);
             for (SSHUserPrivateKey key : keys) {
                 byte[] passphrase = null;
