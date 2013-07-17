@@ -133,7 +133,7 @@ public final class PackageDeploymentCallable implements FilePath.FileCallable<Bo
 
             client.login(request.getUsername(), signer);
         } else {
-            client.setBasicCredentials(request.getUsername(), request.getPassword());
+            client.login(request.getUsername(), request.getPassword());
         }
     }
 

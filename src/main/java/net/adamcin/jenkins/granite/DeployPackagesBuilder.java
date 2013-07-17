@@ -41,11 +41,12 @@ public class DeployPackagesBuilder extends Builder implements PackageDeploymentR
     private boolean recursive;
     private int autosave;
     private String acHandling;
+    private boolean disableForJobTesting;
 
     @DataBoundConstructor
     public DeployPackagesBuilder(String packageIdFilters, String baseUrls, String username, String password,
                                  boolean sshKeyLogin, String behavior, boolean recursive, int autosave,
-                                 String acHandling) {
+                                 String acHandling, boolean disableForJobTesting) {
         this.packageIdFilters = packageIdFilters;
         this.baseUrls = baseUrls;
         this.username = username;
@@ -55,6 +56,7 @@ public class DeployPackagesBuilder extends Builder implements PackageDeploymentR
         this.recursive = recursive;
         this.autosave = autosave;
         this.acHandling = acHandling;
+        this.disableForJobTesting = disableForJobTesting;
     }
 
     public String getPackageIdFilters() {
@@ -139,6 +141,10 @@ public class DeployPackagesBuilder extends Builder implements PackageDeploymentR
         this.acHandling = acHandling;
     }
 
+    public boolean isDisableForJobTesting() {
+        return disableForJobTesting;
+    }
+
     public PackageInstallOptions getPackageInstallOptions() {
         ACHandling _acHandling = ACHandling.IGNORE;
         if (getAcHandling() != null) {
@@ -174,10 +180,20 @@ public class DeployPackagesBuilder extends Builder implements PackageDeploymentR
 
         boolean success = true;
 
+        if (disableForJobTesting) {
+            listener.getLogger().println("DEBUG: *** package deployment disabled for testing ***");
+        }
+
         for (String baseUrl : listBaseUrls()) {
+            listener.getLogger().printf("Deploying packages to %s%n", baseUrl);
             for (Map.Entry<PackId, FilePath> selectedPackage : selectPackages(build, listener).entrySet()) {
-                success = success && selectedPackage.getValue().act(
-                        new PackageDeploymentCallable(this, baseUrl, selectedPackage.getKey(), listener));
+                FilePath.FileCallable<Boolean> callable = null;
+                if (disableForJobTesting) {
+                    callable = new DebugPackageCallable(selectedPackage.getKey(), listener);
+                } else {
+                    callable = new PackageDeploymentCallable(this, baseUrl, selectedPackage.getKey(), listener);
+                }
+                success = success && selectedPackage.getValue().act(callable);
             }
         }
         return success;
@@ -313,6 +329,21 @@ public class DeployPackagesBuilder extends Builder implements PackageDeploymentR
             model.add("Overwrite", "Overwrite");
             model.add("Ignore", "Ignore");
             return model;
+        }
+    }
+
+    static class DebugPackageCallable implements FilePath.FileCallable<Boolean> {
+        final PackId packId;
+        final BuildListener listener;
+
+        DebugPackageCallable(PackId packId, BuildListener listener) {
+            this.packId = packId;
+            this.listener = listener;
+        }
+
+        public Boolean invoke(File f, VirtualChannel channel) throws IOException, InterruptedException {
+            listener.getLogger().printf("DEBUG: %s identified as %s.%n", f.getPath(), packId.toString());
+            return true;
         }
     }
 

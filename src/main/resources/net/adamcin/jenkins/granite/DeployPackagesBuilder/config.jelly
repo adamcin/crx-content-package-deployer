@@ -13,6 +13,11 @@
         <f:expandableTextbox default="*"/>
     </f:entry>
 
+    <f:entry title="Disable for Job Testing" field="disableForJobTesting">
+        <f:checkbox />
+    </f:entry>
+
+
     <f:advanced>
         <f:entry title="Username" field="username">
             <f:textbox default="admin" />
