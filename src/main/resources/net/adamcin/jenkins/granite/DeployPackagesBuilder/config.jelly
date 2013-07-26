@@ -47,6 +47,14 @@
             <f:select />
         </f:entry>
 
+        <f:entry title="Request Timeout" field="requestTimeout">
+            <f:number default="60000" />
+        </f:entry>
+
+        <f:entry title="Service Timeout" field="serviceTimeout">
+            <f:number default="240000" />
+        </f:entry>
+
     </f:advanced>
 
 

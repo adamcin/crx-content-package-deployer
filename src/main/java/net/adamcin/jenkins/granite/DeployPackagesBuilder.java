@@ -42,11 +42,14 @@ public class DeployPackagesBuilder extends Builder implements PackageDeploymentR
     private int autosave;
     private String acHandling;
     private boolean disableForJobTesting;
+    private long requestTimeout;
+    private long serviceTimeout;
 
     @DataBoundConstructor
     public DeployPackagesBuilder(String packageIdFilters, String baseUrls, String username, String password,
                                  boolean sshKeyLogin, String behavior, boolean recursive, int autosave,
-                                 String acHandling, boolean disableForJobTesting) {
+                                 String acHandling, boolean disableForJobTesting, long requestTimeout,
+                                 long serviceTimeout) {
         this.packageIdFilters = packageIdFilters;
         this.baseUrls = baseUrls;
         this.username = username;
@@ -57,6 +60,8 @@ public class DeployPackagesBuilder extends Builder implements PackageDeploymentR
         this.autosave = autosave;
         this.acHandling = acHandling;
         this.disableForJobTesting = disableForJobTesting;
+        this.requestTimeout = requestTimeout;
+        this.serviceTimeout = serviceTimeout;
     }
 
     public String getPackageIdFilters() {
@@ -145,6 +150,26 @@ public class DeployPackagesBuilder extends Builder implements PackageDeploymentR
         return disableForJobTesting;
     }
 
+    public void setDisableForJobTesting(boolean disableForJobTesting) {
+        this.disableForJobTesting = disableForJobTesting;
+    }
+
+    public long getRequestTimeout() {
+        return requestTimeout;
+    }
+
+    public void setRequestTimeout(long requestTimeout) {
+        this.requestTimeout = requestTimeout;
+    }
+
+    public long getServiceTimeout() {
+        return serviceTimeout;
+    }
+
+    public void setServiceTimeout(long serviceTimeout) {
+        this.serviceTimeout = serviceTimeout;
+    }
+
     public PackageInstallOptions getPackageInstallOptions() {
         ACHandling _acHandling = ACHandling.IGNORE;
         if (getAcHandling() != null) {
@@ -191,7 +216,9 @@ public class DeployPackagesBuilder extends Builder implements PackageDeploymentR
                 if (disableForJobTesting) {
                     callable = new DebugPackageCallable(selectedPackage.getKey(), listener);
                 } else {
-                    callable = new PackageDeploymentCallable(this, baseUrl, selectedPackage.getKey(), listener);
+                    callable = new PackageDeploymentCallable(this, baseUrl, selectedPackage.getKey(), listener,
+                                                             requestTimeout > 0L ? requestTimeout : -1L,
+                                                             serviceTimeout > 0L ? serviceTimeout : -1L);
                 }
                 success = success && selectedPackage.getValue().act(callable);
             }
@@ -220,8 +247,7 @@ public class DeployPackagesBuilder extends Builder implements PackageDeploymentR
                             return 0;
                         }
                     }
-            )
-            );
+            ));
 
             for (FilePath path : listed) {
                 PackId packId = path.act(new FilePath.FileCallable<PackId>() {

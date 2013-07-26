@@ -27,27 +27,33 @@ public final class PackageDeploymentCallable implements FilePath.FileCallable<Bo
     private final TaskListener listener;
     private final PackageInstallOptions options;
     private final ExistingPackageBehavior behavior;
+    private final long requestTimeout;
+    private final long serviceTimeout;
 
-    public PackageDeploymentCallable(PackageDeploymentRequest request, String baseUrl, PackId packId, TaskListener listener) {
+    public PackageDeploymentCallable(PackageDeploymentRequest request, String baseUrl, PackId packId, TaskListener listener, long requestTimeout, long serviceTimeout) {
         this.request = request;
         this.options = request.getPackageInstallOptions();
         this.behavior = request.getExistingPackageBehavior();
         this.baseUrl = baseUrl;
         this.packId = packId;
         this.listener = listener;
+        this.requestTimeout = requestTimeout;
+        this.serviceTimeout = serviceTimeout;
     }
 
     public Boolean invoke(File f, VirtualChannel channel) throws IOException, InterruptedException {
 
         AsyncPackageManagerClient client = new AsyncPackageManagerClient(AHC.instance());
         client.setBaseUrl(baseUrl);
+        client.setRequestTimeout(requestTimeout);
+        client.setServiceTimeout(serviceTimeout);
 
         try {
             listener.getLogger().printf("Deploying %s to %s%n", f,
                                                      client.getConsoleUiUrl(packId));
             login(client);
 
-            client.waitForService(50000);
+            client.waitForService();
             if (client.existsOnServer(packId)) {
                 listener.getLogger().println("Found existing package.");
                 if (!this.handleExisting(client, packId)) {
@@ -55,7 +61,7 @@ public final class PackageDeploymentCallable implements FilePath.FileCallable<Bo
                 }
             }
 
-            client.waitForService(50000);
+            client.waitForService();
             listener.getLogger().println("Will attempt to upload package.");
 
             SimpleResponse r_upload = client.upload(f, behavior == ExistingPackageBehavior.OVERWRITE, packId);
@@ -92,7 +98,7 @@ public final class PackageDeploymentCallable implements FilePath.FileCallable<Bo
         }
 
         if (this.behavior == ExistingPackageBehavior.UNINSTALL) {
-            client.waitForService(50000);
+            client.waitForService();
             this.listener.getLogger().println("Will attempt to uninstall package.");
             DetailedResponse r_uninstall = client.uninstall(packId, this);
             if (r_uninstall.isSuccess()) {
@@ -104,7 +110,7 @@ public final class PackageDeploymentCallable implements FilePath.FileCallable<Bo
         }
 
         if (this.behavior == ExistingPackageBehavior.UNINSTALL || this.behavior == ExistingPackageBehavior.DELETE) {
-            client.waitForService(50000);
+            client.waitForService();
             this.listener.getLogger().println("Will attempt to delete package.");
             SimpleResponse r_delete = client.delete(packId);
             if (r_delete.isSuccess()) {
