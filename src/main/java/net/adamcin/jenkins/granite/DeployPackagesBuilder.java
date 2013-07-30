@@ -1,5 +1,7 @@
 package net.adamcin.jenkins.granite;
 
+import com.ning.http.client.AsyncHttpClient;
+import com.ning.http.client.AsyncHttpClientConfig;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
@@ -11,11 +13,14 @@ import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
+import jenkins.plugins.asynchttpclient.AHCUtils;
 import net.adamcin.granite.client.packman.ACHandling;
 import net.adamcin.granite.client.packman.PackId;
 import net.adamcin.granite.client.packman.PackIdFilter;
+import net.sf.json.JSONObject;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
+import org.kohsuke.stapler.StaplerRequest;
 
 import java.io.File;
 import java.io.IOException;
@@ -216,7 +221,8 @@ public class DeployPackagesBuilder extends Builder implements PackageDeploymentR
                 if (disableForJobTesting) {
                     callable = new DebugPackageCallable(selectedPackage.getKey(), listener);
                 } else {
-                    callable = new PackageDeploymentCallable(this, baseUrl, selectedPackage.getKey(), listener,
+                    callable = new PackageDeploymentCallable(this, getDescriptor(), baseUrl,
+                                                             selectedPackage.getKey(), listener,
                                                              requestTimeout > 0L ? requestTimeout : -1L,
                                                              serviceTimeout > 0L ? serviceTimeout : -1L);
                 }
@@ -328,7 +334,15 @@ public class DeployPackagesBuilder extends Builder implements PackageDeploymentR
     }
 
     @Extension // This indicates to Jenkins that this is an implementation of an extension point.
-    public static final class DescriptorImpl extends BuildStepDescriptor<Builder> {
+    public static final class DescriptorImpl extends BuildStepDescriptor<Builder> implements AHCFactory {
+
+        private static final AsyncHttpClientConfig DEFAULT_CONFIG = new AsyncHttpClientConfig.Builder().build();
+
+        private int idleConnectionTimeoutInMs = DEFAULT_CONFIG.getIdleConnectionTimeoutInMs();
+
+        public DescriptorImpl() {
+            load();
+        }
 
         @Override
         public boolean isApplicable(Class<? extends AbstractProject> aClass) {
@@ -337,7 +351,22 @@ public class DeployPackagesBuilder extends Builder implements PackageDeploymentR
 
         @Override
         public String getDisplayName() {
-            return "Deploy Packages";
+            return "[Granite] Deploy Packages";
+        }
+
+        @Override
+        public boolean configure(StaplerRequest req, JSONObject json) throws FormException {
+            req.bindJSON(this, json.getJSONObject("graniteDeployPackages"));
+            save();
+            return true;
+        }
+
+        public int getIdleConnectionTimeoutInMs() {
+            return idleConnectionTimeoutInMs;
+        }
+
+        public void setIdleConnectionTimeoutInMs(int idleConnectionTimeoutInMs) {
+            this.idleConnectionTimeoutInMs = idleConnectionTimeoutInMs;
         }
 
         public FormValidation doCheckBaseUrls(@QueryParameter String value) {
@@ -355,6 +384,14 @@ public class DeployPackagesBuilder extends Builder implements PackageDeploymentR
             model.add("Overwrite", "Overwrite");
             model.add("Ignore", "Ignore");
             return model;
+        }
+
+        public AsyncHttpClient newInstance() {
+            return new AsyncHttpClient(
+                    new AsyncHttpClientConfig.Builder()
+                            .setProxyServer(AHCUtils.getProxyServer())
+                            .setIdleConnectionTimeoutInMs(this.idleConnectionTimeoutInMs)
+                            .build());
         }
     }
 

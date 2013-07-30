@@ -2,11 +2,12 @@ package net.adamcin.jenkins.granite;
 
 import com.cloudbees.jenkins.plugins.sshcredentials.SSHUserPrivateKey;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
+import com.ning.http.client.AsyncHttpClient;
 import hudson.FilePath;
 import hudson.model.TaskListener;
 import hudson.remoting.VirtualChannel;
-import jenkins.plugins.asynchttpclient.AHC;
 import net.adamcin.granite.client.packman.DetailedResponse;
+import net.adamcin.granite.client.packman.ListResponse;
 import net.adamcin.granite.client.packman.PackId;
 import net.adamcin.granite.client.packman.ResponseProgressListener;
 import net.adamcin.granite.client.packman.SimpleResponse;
@@ -22,6 +23,7 @@ import java.util.List;
 public final class PackageDeploymentCallable implements FilePath.FileCallable<Boolean>, ResponseProgressListener {
 
     private final PackageDeploymentRequest request;
+    private final AHCFactory ahcFactory;
     private final String baseUrl;
     private final PackId packId;
     private final TaskListener listener;
@@ -30,8 +32,9 @@ public final class PackageDeploymentCallable implements FilePath.FileCallable<Bo
     private final long requestTimeout;
     private final long serviceTimeout;
 
-    public PackageDeploymentCallable(PackageDeploymentRequest request, String baseUrl, PackId packId, TaskListener listener, long requestTimeout, long serviceTimeout) {
+    public PackageDeploymentCallable(PackageDeploymentRequest request, AHCFactory ahcFactory, String baseUrl, PackId packId, TaskListener listener, long requestTimeout, long serviceTimeout) {
         this.request = request;
+        this.ahcFactory = ahcFactory;
         this.options = request.getPackageInstallOptions();
         this.behavior = request.getExistingPackageBehavior();
         this.baseUrl = baseUrl;
@@ -43,12 +46,15 @@ public final class PackageDeploymentCallable implements FilePath.FileCallable<Bo
 
     public Boolean invoke(File f, VirtualChannel channel) throws IOException, InterruptedException {
 
-        AsyncPackageManagerClient client = new AsyncPackageManagerClient(AHC.instance());
-        client.setBaseUrl(baseUrl);
-        client.setRequestTimeout(requestTimeout);
-        client.setServiceTimeout(serviceTimeout);
+        AsyncHttpClient ahcClient = null;
 
         try {
+            ahcClient = ahcFactory.newInstance();
+            AsyncPackageManagerClient client = new AsyncPackageManagerClient(ahcClient);
+            client.setBaseUrl(baseUrl);
+            client.setRequestTimeout(requestTimeout);
+            client.setServiceTimeout(serviceTimeout);
+
             listener.getLogger().printf("Deploying %s to %s%n", f,
                                                      client.getConsoleUiUrl(packId));
             login(client);
@@ -86,6 +92,10 @@ public final class PackageDeploymentCallable implements FilePath.FileCallable<Bo
             }
         } catch (Exception e) {
             e.printStackTrace(listener.fatalError("Failed to deploy package: %s", e.getMessage()));
+        } finally {
+            if (ahcClient != null) {
+                ahcClient.close();
+            }
         }
 
         return false;
@@ -99,13 +109,18 @@ public final class PackageDeploymentCallable implements FilePath.FileCallable<Bo
 
         if (this.behavior == ExistingPackageBehavior.UNINSTALL) {
             client.waitForService();
-            this.listener.getLogger().println("Will attempt to uninstall package.");
-            DetailedResponse r_uninstall = client.uninstall(packId, this);
-            if (r_uninstall.isSuccess()) {
-                this.onLog(r_uninstall.getMessage());
+            ListResponse r_list = client.list(packId, false);
+            if (!r_list.getResults().isEmpty() && r_list.getResults().get(0).isHasSnapshot()) {
+                this.listener.getLogger().println("Will attempt to uninstall package.");
+                DetailedResponse r_uninstall = client.uninstall(packId, this);
+                if (r_uninstall.isSuccess()) {
+                    this.onLog(r_uninstall.getMessage());
+                } else {
+                    this.listener.fatalError("Failed to uninstall package: %s", r_uninstall.getMessage());
+                    return false;
+                }
             } else {
-                this.listener.fatalError("Failed to uninstall package: %s", r_uninstall.getMessage());
-                return false;
+                this.listener.getLogger().println("Existing package has not been installed. Skipping uninstallation...");
             }
         }
 
