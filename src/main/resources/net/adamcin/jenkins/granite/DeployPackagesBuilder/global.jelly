@@ -1,7 +1,21 @@
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
     <f:section title="[Granite] Deploy Packages - HTTP Client Config" name="graniteDeployPackages">
+
+        <f:entry title="Request Timeout in MS" field="requestTimeoutInMs">
+            <f:textbox />
+        </f:entry>
+
+        <f:entry title="Connection Timeout in MS" field="connectionTimeoutInMs">
+            <f:textbox />
+        </f:entry>
+
         <f:entry title="Idle Connection Timeout in MS" field="idleConnectionTimeoutInMs">
             <f:textbox />
         </f:entry>
+
+        <f:entry title="Web Socket Idle Connection Timeout in MS" field="webSocketIdleTimeoutInMs">
+            <f:textbox />
+        </f:entry>
+
     </f:section>
 </j:jelly>

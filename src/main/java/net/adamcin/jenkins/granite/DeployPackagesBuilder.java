@@ -338,7 +338,10 @@ public class DeployPackagesBuilder extends Builder implements PackageDeploymentR
 
         private static final AsyncHttpClientConfig DEFAULT_CONFIG = new AsyncHttpClientConfig.Builder().build();
 
+        private int connectionTimeoutInMs = DEFAULT_CONFIG.getConnectionTimeoutInMs();
         private int idleConnectionTimeoutInMs = DEFAULT_CONFIG.getIdleConnectionTimeoutInMs();
+        private int requestTimeoutInMs = DEFAULT_CONFIG.getRequestTimeoutInMs();
+        private int webSocketIdleTimeoutInMs = DEFAULT_CONFIG.getWebSocketIdleTimeoutInMs();
 
         public DescriptorImpl() {
             load();
@@ -361,12 +364,36 @@ public class DeployPackagesBuilder extends Builder implements PackageDeploymentR
             return true;
         }
 
+        public int getConnectionTimeoutInMs() {
+            return connectionTimeoutInMs;
+        }
+
+        public void setConnectionTimeoutInMs(int connectionTimeoutInMs) {
+            this.connectionTimeoutInMs = connectionTimeoutInMs;
+        }
+
         public int getIdleConnectionTimeoutInMs() {
             return idleConnectionTimeoutInMs;
         }
 
         public void setIdleConnectionTimeoutInMs(int idleConnectionTimeoutInMs) {
             this.idleConnectionTimeoutInMs = idleConnectionTimeoutInMs;
+        }
+
+        public int getRequestTimeoutInMs() {
+            return requestTimeoutInMs;
+        }
+
+        public void setRequestTimeoutInMs(int requestTimeoutInMs) {
+            this.requestTimeoutInMs = requestTimeoutInMs;
+        }
+
+        public int getWebSocketIdleTimeoutInMs() {
+            return webSocketIdleTimeoutInMs;
+        }
+
+        public void setWebSocketIdleTimeoutInMs(int webSocketIdleTimeoutInMs) {
+            this.webSocketIdleTimeoutInMs = webSocketIdleTimeoutInMs;
         }
 
         public FormValidation doCheckBaseUrls(@QueryParameter String value) {
@@ -390,7 +417,10 @@ public class DeployPackagesBuilder extends Builder implements PackageDeploymentR
             return new AsyncHttpClient(
                     new AsyncHttpClientConfig.Builder()
                             .setProxyServer(AHCUtils.getProxyServer())
+                            .setConnectionTimeoutInMs(this.connectionTimeoutInMs)
                             .setIdleConnectionTimeoutInMs(this.idleConnectionTimeoutInMs)
+                            .setRequestTimeoutInMs(this.requestTimeoutInMs)
+                            .setWebSocketIdleTimeoutInMs(this.webSocketIdleTimeoutInMs)
                             .build());
         }
     }
