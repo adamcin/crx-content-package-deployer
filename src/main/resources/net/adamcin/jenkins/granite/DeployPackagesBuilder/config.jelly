@@ -5,7 +5,7 @@
       See global.jelly for a general discussion about jelly script.
     -->
 
-    <f:entry title="Base URL" field="baseUrls" checkUrl="'${rootURL}/plugin/jenkins-granite-client/checkBaseUrls?value='+this.value">
+    <f:entry title="Base URL" field="baseUrls" checkUrl="'${rootURL}/plugin/jenkins-granite-client/checkBaseUrls?baseUrls='+this.value">
         <f:expandableTextbox />
     </f:entry>
 

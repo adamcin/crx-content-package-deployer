@@ -56,39 +56,42 @@ public final class PackageDeploymentCallable implements FilePath.FileCallable<Bo
             client.setServiceTimeout(serviceTimeout);
 
             listener.getLogger().printf("Deploying %s to %s%n", f,
-                                                     client.getConsoleUiUrl(packId));
-            login(client);
+                                        client.getConsoleUiUrl(packId));
+            if (login(client)) {
 
-            client.waitForService();
-            if (client.existsOnServer(packId)) {
-                listener.getLogger().println("Found existing package.");
-                if (!this.handleExisting(client, packId)) {
-                    return false;
+                client.waitForService();
+                if (client.existsOnServer(packId)) {
+                    listener.getLogger().println("Found existing package.");
+                    if (!this.handleExisting(client, packId)) {
+                        return false;
+                    }
                 }
-            }
 
-            client.waitForService();
-            listener.getLogger().println("Will attempt to upload package.");
+                client.waitForService();
+                listener.getLogger().println("Will attempt to upload package.");
 
-            SimpleResponse r_upload = client.upload(f, behavior == ExistingPackageBehavior.OVERWRITE, packId);
-            if (r_upload.isSuccess()) {
-                this.onLog(r_upload.getMessage());
-                listener.getLogger().println("Will attempt to install package.");
-
-                DetailedResponse r_install = client.install(packId,
-                                                            options.isRecursive(),
-                                                            options.getAutosave(),
-                                                            options.getAcHandling(),
-                                                            this);
-                if (r_install.isSuccess()) {
+                SimpleResponse r_upload = client.upload(f, behavior == ExistingPackageBehavior.OVERWRITE, packId);
+                if (r_upload.isSuccess()) {
                     this.onLog(r_upload.getMessage());
-                } else {
-                    listener.fatalError("%s", r_install.getMessage());
-                }
+                    listener.getLogger().println("Will attempt to install package.");
 
-                return r_install.isSuccess();
+                    DetailedResponse r_install = client.install(packId,
+                                                                options.isRecursive(),
+                                                                options.getAutosave(),
+                                                                options.getAcHandling(),
+                                                                this);
+                    if (r_install.isSuccess()) {
+                        this.onLog(r_upload.getMessage());
+                    } else {
+                        listener.fatalError("%s", r_install.getMessage());
+                    }
+
+                    return r_install.isSuccess();
+                } else {
+                    listener.fatalError(r_upload.getMessage());
+                }
             } else {
-                listener.fatalError(r_upload.getMessage());
+                listener.fatalError("Failed to login to %s", baseUrl);
             }
         } catch (Exception e) {
             e.printStackTrace(listener.fatalError("Failed to deploy package: %s", e.getMessage()));
@@ -139,7 +142,7 @@ public final class PackageDeploymentCallable implements FilePath.FileCallable<Bo
         return true;
     }
 
-    private void login(AsyncPackageManagerClient client) throws SignerException, IOException {
+    private boolean login(AsyncPackageManagerClient client) throws SignerException, IOException {
         if (request.isSshKeyLogin()) {
             Signer signer = SignerFactory.getFactoryInstance().getInstance();
             List<SSHUserPrivateKey> keys = CredentialsProvider.lookupCredentials(SSHUserPrivateKey.class);
@@ -152,9 +155,9 @@ public final class PackageDeploymentCallable implements FilePath.FileCallable<Bo
                 signer.addLocalKey(key.getUsername(), key.getPrivateKey().getBytes("UTF-8"), passphrase);
             }
 
-            client.login(request.getUsername(), signer);
+            return client.login(request.getUsername(), signer);
         } else {
-            client.login(request.getUsername(), request.getPassword());
+            return client.login(request.getUsername(), request.getPassword());
         }
     }
 

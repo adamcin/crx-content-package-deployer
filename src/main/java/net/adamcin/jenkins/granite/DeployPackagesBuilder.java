@@ -319,8 +319,12 @@ public class DeployPackagesBuilder extends Builder implements PackageDeploymentR
     }
 
     private List<String> listBaseUrls() {
-        List<String> _baseUrls = new ArrayList<String>();
-        for (String url : getBaseUrls().split("(\\r)?\\n")) {
+        return parseBaseUrls(getBaseUrls());
+    }
+
+    private static List<String> parseBaseUrls(String value) {
+         List<String> _baseUrls = new ArrayList<String>();
+        for (String url : value.split("(\\r)?\\n")) {
             if (url.trim().length() > 0) {
                 _baseUrls.add(url);
             }
@@ -396,7 +400,10 @@ public class DeployPackagesBuilder extends Builder implements PackageDeploymentR
             this.webSocketIdleTimeoutInMs = webSocketIdleTimeoutInMs;
         }
 
-        public FormValidation doCheckBaseUrls(@QueryParameter String value) {
+        public FormValidation doCheckBaseUrls(@QueryParameter String baseUrls) {
+            for (String baseUrl : parseBaseUrls(baseUrls)) {
+
+            }
             return FormValidation.ok();
         }
 
