@@ -11,6 +11,7 @@ import net.adamcin.granite.client.packman.ListResponse;
 import net.adamcin.granite.client.packman.PackId;
 import net.adamcin.granite.client.packman.ResponseProgressListener;
 import net.adamcin.granite.client.packman.SimpleResponse;
+import net.adamcin.granite.client.packman.UnauthorizedException;
 import net.adamcin.granite.client.packman.async.AsyncPackageManagerClient;
 import net.adamcin.sshkey.api.Signer;
 import net.adamcin.sshkey.api.SignerException;
@@ -143,6 +144,16 @@ public final class PackageDeploymentCallable implements FilePath.FileCallable<Bo
     }
 
     private boolean login(AsyncPackageManagerClient client) throws SignerException, IOException {
+        try {
+            client.waitForService();
+        } catch (UnauthorizedException e) {
+            // ignore this, since the
+        } catch (IOException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new IOException("Failed to wait for service to check login status", e);
+        }
+
         if (request.isSshKeyLogin()) {
             Signer signer = SignerFactory.getFactoryInstance().getInstance();
             List<SSHUserPrivateKey> keys = CredentialsProvider.lookupCredentials(SSHUserPrivateKey.class);
