@@ -147,7 +147,7 @@ public final class PackageDeploymentCallable implements FilePath.FileCallable<Bo
         try {
             client.waitForService();
         } catch (UnauthorizedException e) {
-            // ignore this, since the
+            // ignore this, since we want to login regardless.
         } catch (IOException e) {
             throw e;
         } catch (Exception e) {
