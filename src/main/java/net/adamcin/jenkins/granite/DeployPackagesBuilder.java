@@ -8,6 +8,7 @@ import hudson.Launcher;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.model.BuildListener;
+import hudson.model.TaskListener;
 import hudson.remoting.VirtualChannel;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
@@ -18,6 +19,7 @@ import net.adamcin.granite.client.packman.ACHandling;
 import net.adamcin.granite.client.packman.PackId;
 import net.adamcin.granite.client.packman.PackIdFilter;
 import net.sf.json.JSONObject;
+import org.jenkinsci.plugins.tokenmacro.TokenMacro;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
@@ -214,7 +216,7 @@ public class DeployPackagesBuilder extends Builder implements PackageDeploymentR
             listener.getLogger().println("DEBUG: *** package deployment disabled for testing ***");
         }
 
-        for (String baseUrl : listBaseUrls()) {
+        for (String baseUrl : listBaseUrls(build, listener)) {
             listener.getLogger().printf("Deploying packages to %s%n", baseUrl);
             for (Map.Entry<PackId, FilePath> selectedPackage : selectPackages(build, listener).entrySet()) {
                 FilePath.FileCallable<Boolean> callable = null;
@@ -316,6 +318,15 @@ public class DeployPackagesBuilder extends Builder implements PackageDeploymentR
             }
         }
         return Collections.unmodifiableMap(filters);
+    }
+
+    private List<String> listBaseUrls(AbstractBuild<?, ?> build, TaskListener listener) {
+        try {
+            return parseBaseUrls(TokenMacro.expandAll(build, listener, getBaseUrls()));
+        } catch (Exception e) {
+            listener.error("failed to expand tokens in: %n%s", getBaseUrls());
+        }
+        return parseBaseUrls(getBaseUrls());
     }
 
     private List<String> listBaseUrls() {
