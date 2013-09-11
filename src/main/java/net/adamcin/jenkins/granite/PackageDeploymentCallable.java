@@ -4,6 +4,8 @@ import com.cloudbees.jenkins.plugins.sshcredentials.SSHUserPrivateKey;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.ning.http.client.AsyncHttpClient;
 import hudson.FilePath;
+import hudson.model.AbstractBuild;
+import hudson.model.Result;
 import hudson.model.TaskListener;
 import hudson.remoting.VirtualChannel;
 import net.adamcin.granite.client.packman.DetailedResponse;
@@ -21,7 +23,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
-public final class PackageDeploymentCallable implements FilePath.FileCallable<Boolean>, ResponseProgressListener {
+public final class PackageDeploymentCallable implements FilePath.FileCallable<Result>, ResponseProgressListener {
 
     private final PackageDeploymentRequest request;
     private final AHCFactory ahcFactory;
@@ -33,7 +35,8 @@ public final class PackageDeploymentCallable implements FilePath.FileCallable<Bo
     private final long requestTimeout;
     private final long serviceTimeout;
 
-    public PackageDeploymentCallable(PackageDeploymentRequest request, AHCFactory ahcFactory, String baseUrl, PackId packId, TaskListener listener, long requestTimeout, long serviceTimeout) {
+    public PackageDeploymentCallable(PackageDeploymentRequest request, AHCFactory ahcFactory, String baseUrl, PackId packId,
+                                     TaskListener listener, long requestTimeout, long serviceTimeout) {
         this.request = request;
         this.ahcFactory = ahcFactory;
         this.options = request.getPackageInstallOptions();
@@ -45,7 +48,7 @@ public final class PackageDeploymentCallable implements FilePath.FileCallable<Bo
         this.serviceTimeout = serviceTimeout;
     }
 
-    public Boolean invoke(File f, VirtualChannel channel) throws IOException, InterruptedException {
+    public Result invoke(File f, VirtualChannel channel) throws IOException, InterruptedException {
 
         AsyncHttpClient ahcClient = null;
 
@@ -64,7 +67,7 @@ public final class PackageDeploymentCallable implements FilePath.FileCallable<Bo
                 if (client.existsOnServer(packId)) {
                     listener.getLogger().println("Found existing package.");
                     if (!this.handleExisting(client, packId)) {
-                        return false;
+                        return Result.FAILURE;
                     }
                 }
 
@@ -83,11 +86,16 @@ public final class PackageDeploymentCallable implements FilePath.FileCallable<Bo
                                                                 this);
                     if (r_install.isSuccess()) {
                         this.onLog(r_upload.getMessage());
+                        if (r_install.hasErrors()) {
+                            return Result.UNSTABLE;
+                        } else {
+                            return Result.SUCCESS;
+                        }
                     } else {
                         listener.fatalError("%s", r_install.getMessage());
+                        return Result.FAILURE;
                     }
 
-                    return r_install.isSuccess();
                 } else {
                     listener.fatalError(r_upload.getMessage());
                 }
@@ -102,7 +110,7 @@ public final class PackageDeploymentCallable implements FilePath.FileCallable<Bo
             }
         }
 
-        return false;
+        return Result.FAILURE;
     }
 
     private boolean handleExisting(AsyncPackageManagerClient client, PackId packId) throws Exception {

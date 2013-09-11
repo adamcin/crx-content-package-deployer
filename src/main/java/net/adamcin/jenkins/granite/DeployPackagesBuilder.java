@@ -5,10 +5,7 @@ import com.ning.http.client.AsyncHttpClientConfig;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
-import hudson.model.AbstractBuild;
-import hudson.model.AbstractProject;
-import hudson.model.BuildListener;
-import hudson.model.TaskListener;
+import hudson.model.*;
 import hudson.remoting.VirtualChannel;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
@@ -210,28 +207,37 @@ public class DeployPackagesBuilder extends Builder implements PackageDeploymentR
     public boolean perform(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener)
             throws InterruptedException, IOException {
 
-        boolean success = true;
+        Result result = build.getResult();
+        if (result == null) {
+            result = Result.SUCCESS;
+        }
 
         if (disableForJobTesting) {
             listener.getLogger().println("DEBUG: *** package deployment disabled for testing ***");
         }
 
         for (String baseUrl : listBaseUrls(build, listener)) {
-            listener.getLogger().printf("Deploying packages to %s%n", baseUrl);
-            for (Map.Entry<PackId, FilePath> selectedPackage : selectPackages(build, listener).entrySet()) {
-                FilePath.FileCallable<Boolean> callable = null;
-                if (disableForJobTesting) {
-                    callable = new DebugPackageCallable(selectedPackage.getKey(), listener);
-                } else {
-                    callable = new PackageDeploymentCallable(this, getDescriptor(), baseUrl,
-                                                             selectedPackage.getKey(), listener,
-                                                             requestTimeout > 0L ? requestTimeout : -1L,
-                                                             serviceTimeout > 0L ? serviceTimeout : -1L);
+            if (result.isBetterOrEqualTo(Result.UNSTABLE)) {
+                listener.getLogger().printf("Deploying packages to %s%n", baseUrl);
+                for (Map.Entry<PackId, FilePath> selectedPackage : selectPackages(build, listener).entrySet()) {
+                    if (!result.isBetterOrEqualTo(Result.UNSTABLE)) {
+                        return false;
+                    }
+                    FilePath.FileCallable<Result> callable = null;
+                    if (disableForJobTesting) {
+                        callable = new DebugPackageCallable(selectedPackage.getKey(), listener);
+                    } else {
+                        callable = new PackageDeploymentCallable(this, getDescriptor(), baseUrl,
+                                selectedPackage.getKey(), listener,
+                                requestTimeout > 0L ? requestTimeout : -1L,
+                                serviceTimeout > 0L ? serviceTimeout : -1L);
+                    }
+                    result = result.combine(selectedPackage.getValue().act(callable));
                 }
-                success = success && selectedPackage.getValue().act(callable);
             }
         }
-        return success;
+
+        return result.isBetterOrEqualTo(Result.UNSTABLE);
     }
 
     private Map<PackId, FilePath> selectPackages(final AbstractBuild<?, ?> build, final BuildListener listener) throws IOException, InterruptedException {
@@ -443,7 +449,7 @@ public class DeployPackagesBuilder extends Builder implements PackageDeploymentR
         }
     }
 
-    static class DebugPackageCallable implements FilePath.FileCallable<Boolean> {
+    static class DebugPackageCallable implements FilePath.FileCallable<Result> {
         final PackId packId;
         final BuildListener listener;
 
@@ -452,9 +458,9 @@ public class DeployPackagesBuilder extends Builder implements PackageDeploymentR
             this.listener = listener;
         }
 
-        public Boolean invoke(File f, VirtualChannel channel) throws IOException, InterruptedException {
+        public Result invoke(File f, VirtualChannel channel) throws IOException, InterruptedException {
             listener.getLogger().printf("DEBUG: %s identified as %s.%n", f.getPath(), packId.toString());
-            return true;
+            return Result.SUCCESS;
         }
     }
 
