@@ -14,12 +14,12 @@ public class GraniteAnnotatorFactory extends ConsoleAnnotatorFactory<Class<Run>>
     public ConsoleAnnotator newInstance(Class<Run> context) {
         SectionDefinition uninstallSection = new SectionDefinition(
                 "[Granite] Uninstalling package",
-                "M Uninstalling package from snapshot .*",
-                "M Package imported.");
+                "Uninstalling content",
+                "Package uninstalled");
         SectionDefinition installSection = new SectionDefinition(
                 "[Granite] Installing package",
-                "M Creating snapshot for package .*",
-                "M Package imported.");
+                "Installing content",
+                "Package uploaded");
         return new CollapsingSectionAnnotator(uninstallSection, installSection);
     }
 }
