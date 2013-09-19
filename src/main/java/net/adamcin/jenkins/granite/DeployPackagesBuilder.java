@@ -232,7 +232,9 @@ public class DeployPackagesBuilder extends Builder implements PackageDeploymentR
                                 requestTimeout > 0L ? requestTimeout : -1L,
                                 serviceTimeout > 0L ? serviceTimeout : -1L);
                     }
+
                     result = result.combine(selectedPackage.getValue().act(callable));
+                    build.setResult(result);
                 }
             }
         }

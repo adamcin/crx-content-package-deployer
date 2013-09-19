@@ -87,6 +87,7 @@ public final class PackageDeploymentCallable implements FilePath.FileCallable<Re
                     if (r_install.isSuccess()) {
                         this.onLog(r_upload.getMessage());
                         if (r_install.hasErrors()) {
+                            //listener.getLogger().println("should be unstable");
                             return Result.UNSTABLE;
                         } else {
                             return Result.SUCCESS;
