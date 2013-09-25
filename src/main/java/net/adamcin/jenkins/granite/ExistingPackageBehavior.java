@@ -8,5 +8,5 @@ package net.adamcin.jenkins.granite;
  * To change this template use File | Settings | File Templates.
  */
 public enum ExistingPackageBehavior {
-    UNINSTALL, DELETE, OVERWRITE, IGNORE
+    UNINSTALL, DELETE, OVERWRITE, SKIP, IGNORE
 }

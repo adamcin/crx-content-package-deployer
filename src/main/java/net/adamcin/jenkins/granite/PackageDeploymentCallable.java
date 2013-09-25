@@ -68,6 +68,9 @@ public final class PackageDeploymentCallable implements FilePath.FileCallable<Re
                     listener.getLogger().println("Found existing package.");
                     if (!this.handleExisting(client, packId)) {
                         return Result.FAILURE;
+                    } else if (behavior == ExistingPackageBehavior.SKIP) {
+                        listener.getLogger().println("Will skip package upload and return SUCCESS.");
+                        return Result.SUCCESS;
                     }
                 }
 
@@ -115,7 +118,9 @@ public final class PackageDeploymentCallable implements FilePath.FileCallable<Re
     }
 
     private boolean handleExisting(AsyncPackageManagerClient client, PackId packId) throws Exception {
-        if (behavior == ExistingPackageBehavior.IGNORE || behavior == ExistingPackageBehavior.OVERWRITE) {
+        if (behavior == ExistingPackageBehavior.IGNORE
+                || behavior == ExistingPackageBehavior.OVERWRITE
+                || behavior == ExistingPackageBehavior.SKIP) {
             listener.getLogger().println("Ignoring existing package...");
             return true;
         }

@@ -198,6 +198,8 @@ public class DeployPackagesBuilder extends Builder implements PackageDeploymentR
                 _behavior = ExistingPackageBehavior.DELETE;
             } else if ("overwrite".equalsIgnoreCase(getBehavior())) {
                 _behavior = ExistingPackageBehavior.OVERWRITE;
+            } else if ("skip".equalsIgnoreCase(getBehavior())) {
+                _behavior = ExistingPackageBehavior.SKIP;
             }
         }
         return _behavior;
@@ -435,6 +437,7 @@ public class DeployPackagesBuilder extends Builder implements PackageDeploymentR
             model.add("Uninstall and delete", "Uninstall");
             model.add("Delete", "Delete");
             model.add("Overwrite", "Overwrite");
+            model.add("Skip", "Skip");
             model.add("Ignore", "Ignore");
             return model;
         }
