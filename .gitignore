@@ -16,3 +16,5 @@ project/plugins/project/
 *.iml
 .idea/
 lib/
+
+*/crx-quickstart/

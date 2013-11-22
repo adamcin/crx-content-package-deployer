@@ -4,7 +4,6 @@ import com.cloudbees.jenkins.plugins.sshcredentials.SSHUserPrivateKey;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.ning.http.client.AsyncHttpClient;
 import hudson.FilePath;
-import hudson.model.AbstractBuild;
 import hudson.model.Result;
 import hudson.model.TaskListener;
 import hudson.remoting.VirtualChannel;
@@ -17,7 +16,6 @@ import net.adamcin.granite.client.packman.UnauthorizedException;
 import net.adamcin.granite.client.packman.async.AsyncPackageManagerClient;
 import net.adamcin.sshkey.api.Signer;
 import net.adamcin.sshkey.api.SignerException;
-import net.adamcin.sshkey.api.SignerFactory;
 
 import java.io.File;
 import java.io.IOException;
