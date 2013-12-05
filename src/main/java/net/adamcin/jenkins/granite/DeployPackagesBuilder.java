@@ -283,7 +283,7 @@ public class DeployPackagesBuilder extends Builder implements PackageDeploymentR
         }
 
         Map<PackId, FilePath> selected = new LinkedHashMap<PackId, FilePath>();
-        for (Map.Entry<String, PackIdFilter> filterEntry : listPackageFilters().entrySet()) {
+        for (Map.Entry<String, PackIdFilter> filterEntry : listPackageFilters(build, listener).entrySet()) {
             boolean matched = false;
             for (Map.Entry<PackId, FilePath> entry : found.entrySet()) {
                 if (filterEntry.getValue().includes(entry.getKey())) {
@@ -320,12 +320,20 @@ public class DeployPackagesBuilder extends Builder implements PackageDeploymentR
         return Collections.unmodifiableMap(selected);
     }
 
-    private Map<String, PackIdFilter> listPackageFilters() {
+    public String getPackageIdFilters(AbstractBuild<?, ?> build, TaskListener listener) throws Exception {
+        return TokenMacro.expandAll(build, listener, getPackageIdFilters());
+    }
+
+    private Map<String, PackIdFilter> listPackageFilters(AbstractBuild<?, ?> build, TaskListener listener) {
         Map<String, PackIdFilter> filters = new LinkedHashMap<String, PackIdFilter>();
-        for (String filter : getPackageIdFilters().split("(\\r)?\\n")) {
-            if (filter.trim().length() > 0) {
-                filters.put(filter, DefaultPackIdFilter.parse(filter));
+        try {
+            for (String filter : getPackageIdFilters(build, listener).split("(\\r)?\\n")) {
+                if (filter.trim().length() > 0) {
+                    filters.put(filter, DefaultPackIdFilter.parse(filter));
+                }
             }
+        } catch (Exception e) {
+            listener.error("failed to expand tokens in: %n%s", getPackageIdFilters());
         }
         return Collections.unmodifiableMap(filters);
     }

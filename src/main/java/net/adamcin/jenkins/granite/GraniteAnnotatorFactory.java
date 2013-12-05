@@ -5,21 +5,25 @@ import hudson.console.ConsoleAnnotator;
 import hudson.console.ConsoleAnnotatorFactory;
 import hudson.model.Run;
 import org.jvnet.hudson.plugins.collapsingconsolesections.CollapsingSectionAnnotator;
+import org.jvnet.hudson.plugins.collapsingconsolesections.CollapsingSectionNote;
+import org.jvnet.hudson.plugins.collapsingconsolesections.CollapsingSectionsConfiguration;
 import org.jvnet.hudson.plugins.collapsingconsolesections.SectionDefinition;
 
-@Extension
+@Extension(optional = true)
 public class GraniteAnnotatorFactory extends ConsoleAnnotatorFactory<Class<Run>> {
 
     @Override
     public ConsoleAnnotator newInstance(Class<Run> context) {
-        SectionDefinition uninstallSection = new SectionDefinition(
+        CollapsingSectionNote uninstallSection = new CollapsingSectionNote(
                 "[Granite] Uninstalling package",
                 "Uninstalling content",
-                "Package uninstalled");
-        SectionDefinition installSection = new SectionDefinition(
+                "Package uninstalled", false);
+        CollapsingSectionNote installSection = new CollapsingSectionNote(
                 "[Granite] Installing package",
                 "Installing content",
-                "Package uploaded");
-        return new CollapsingSectionAnnotator(uninstallSection, installSection);
+                "Package uploaded", false);
+        return new CollapsingSectionAnnotator(
+                new CollapsingSectionsConfiguration(
+                        new CollapsingSectionNote[]{uninstallSection, installSection}, false));
     }
 }

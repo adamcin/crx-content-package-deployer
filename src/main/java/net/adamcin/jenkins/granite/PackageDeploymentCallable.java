@@ -14,8 +14,10 @@ import net.adamcin.granite.client.packman.ResponseProgressListener;
 import net.adamcin.granite.client.packman.SimpleResponse;
 import net.adamcin.granite.client.packman.UnauthorizedException;
 import net.adamcin.granite.client.packman.async.AsyncPackageManagerClient;
+import net.adamcin.sshkey.api.DefaultKeychain;
+import net.adamcin.sshkey.api.Key;
 import net.adamcin.sshkey.api.Signer;
-import net.adamcin.sshkey.api.SignerException;
+import net.adamcin.sshkey.bouncycastle.PEMHelper;
 
 import java.io.File;
 import java.io.IOException;
@@ -155,7 +157,7 @@ public final class PackageDeploymentCallable implements FilePath.FileCallable<Re
         return true;
     }
 
-    private boolean login(AsyncPackageManagerClient client) throws SignerException, IOException {
+    private boolean login(AsyncPackageManagerClient client) throws IOException {
         try {
             client.waitForService();
         } catch (UnauthorizedException e) {
@@ -167,17 +169,21 @@ public final class PackageDeploymentCallable implements FilePath.FileCallable<Re
         }
 
         if (request.isSshKeyLogin()) {
-            Signer signer = SignerFactory.getFactoryInstance().getInstance();
             List<SSHUserPrivateKey> keys = CredentialsProvider.lookupCredentials(SSHUserPrivateKey.class);
+            DefaultKeychain keychain = new DefaultKeychain();
             for (SSHUserPrivateKey key : keys) {
-                byte[] passphrase = null;
+                char[] passphrase = null;
                 if (key.getPassphrase() != null) {
-                    passphrase = key.getPassphrase().getEncryptedValue().getBytes("UTF-8");
+                    passphrase = key.getPassphrase().getEncryptedValue().toCharArray();
                 }
 
-                signer.addLocalKey(key.getUsername(), key.getPrivateKey().getBytes("UTF-8"), passphrase);
+                Key sshkey = PEMHelper.readKey(key.getPrivateKey().getBytes("UTF-8"), passphrase);
+                if (sshkey != null) {
+                    keychain.add(sshkey);
+                }
             }
 
+            Signer signer = new Signer(keychain);
             return client.login(request.getUsername(), signer);
         } else {
             return client.login(request.getUsername(), request.getPassword());
