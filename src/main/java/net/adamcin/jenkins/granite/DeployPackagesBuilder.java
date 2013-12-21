@@ -1,17 +1,45 @@
+/*
+ * This is free and unencumbered software released into the public domain.
+ *
+ * Anyone is free to copy, modify, publish, use, compile, sell, or
+ * distribute this software, either in source code form or as a compiled
+ * binary, for any purpose, commercial or non-commercial, and by any
+ * means.
+ *
+ * In jurisdictions that recognize copyright laws, the author or authors
+ * of this software dedicate any and all copyright interest in the
+ * software to the public domain. We make this dedication for the benefit
+ * of the public at large and to the detriment of our heirs and
+ * successors. We intend this dedication to be an overt act of
+ * relinquishment in perpetuity of all present and future rights to this
+ * software under copyright law.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+ * IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+ * OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+ * ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+ * OTHER DEALINGS IN THE SOFTWARE.
+ *
+ * For more information, please refer to <http://unlicense.org/>
+ */
+
 package net.adamcin.jenkins.granite;
 
-import com.ning.http.client.AsyncHttpClient;
-import com.ning.http.client.AsyncHttpClientConfig;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
-import hudson.model.*;
+import hudson.model.AbstractBuild;
+import hudson.model.AbstractProject;
+import hudson.model.BuildListener;
+import hudson.model.Result;
+import hudson.model.TaskListener;
 import hudson.remoting.VirtualChannel;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
-import jenkins.plugins.asynchttpclient.AHCUtils;
 import net.adamcin.granite.client.packman.ACHandling;
 import net.adamcin.granite.client.packman.PackId;
 import net.adamcin.granite.client.packman.PackIdFilter;
@@ -34,13 +62,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class DeployPackagesBuilder extends Builder implements PackageDeploymentRequest {
+public class DeployPackagesBuilder extends Builder {
 
     private String packageIdFilters;
     private String baseUrls;
     private String username;
     private String password;
-    private boolean sshKeyLogin;
+    private boolean signatureLogin;
+    private String localDirectory;
     private String behavior;
     private boolean recursive;
     private int autosave;
@@ -51,14 +80,15 @@ public class DeployPackagesBuilder extends Builder implements PackageDeploymentR
 
     @DataBoundConstructor
     public DeployPackagesBuilder(String packageIdFilters, String baseUrls, String username, String password,
-                                 boolean sshKeyLogin, String behavior, boolean recursive, int autosave,
-                                 String acHandling, boolean disableForJobTesting, long requestTimeout,
+                                 boolean signatureLogin, String localDirectory, String behavior, boolean recursive,
+                                 int autosave, String acHandling, boolean disableForJobTesting, long requestTimeout,
                                  long serviceTimeout) {
         this.packageIdFilters = packageIdFilters;
         this.baseUrls = baseUrls;
         this.username = username;
         this.password = password;
-        this.sshKeyLogin = sshKeyLogin;
+        this.signatureLogin = signatureLogin;
+        this.localDirectory = localDirectory;
         this.behavior = behavior;
         this.recursive = recursive;
         this.autosave = autosave;
@@ -110,12 +140,24 @@ public class DeployPackagesBuilder extends Builder implements PackageDeploymentR
         this.password = password;
     }
 
-    public boolean isSshKeyLogin() {
-        return sshKeyLogin;
+    public boolean isSignatureLogin() {
+        return signatureLogin;
     }
 
-    public void setSshKeyLogin(boolean sshKeyLogin) {
-        this.sshKeyLogin = sshKeyLogin;
+    public void setSignatureLogin(boolean signatureLogin) {
+        this.signatureLogin = signatureLogin;
+    }
+
+    public String getLocalDirectory() {
+        if (localDirectory == null || localDirectory.trim().isEmpty()) {
+            return ".";
+        } else {
+            return localDirectory.trim();
+        }
+    }
+
+    public void setLocalDirectory(String localDirectory) {
+        this.localDirectory = localDirectory;
     }
 
     public String getBehavior() {
@@ -218,6 +260,9 @@ public class DeployPackagesBuilder extends Builder implements PackageDeploymentR
             listener.getLogger().println("DEBUG: *** package deployment disabled for testing ***");
         }
 
+        final String fUsername = getUsername(build, listener);
+        final String fPassword = getPassword(build, listener);
+
         for (String baseUrl : listBaseUrls(build, listener)) {
             if (result.isBetterOrEqualTo(Result.UNSTABLE)) {
                 listener.getLogger().printf("Deploying packages to %s%n", baseUrl);
@@ -229,10 +274,19 @@ public class DeployPackagesBuilder extends Builder implements PackageDeploymentR
                     if (disableForJobTesting) {
                         callable = new DebugPackageCallable(selectedPackage.getKey(), listener);
                     } else {
-                        callable = new PackageDeploymentCallable(this, getDescriptor(), baseUrl,
-                                selectedPackage.getKey(), listener,
-                                requestTimeout > 0L ? requestTimeout : -1L,
-                                serviceTimeout > 0L ? serviceTimeout : -1L);
+                        GraniteClientConfig clientConfig =
+                                new GraniteClientConfig(
+                                        baseUrl,
+                                        fUsername,
+                                        fPassword,
+                                        isSignatureLogin(),
+                                        requestTimeout > 0L ? requestTimeout : -1L,
+                                        serviceTimeout > 0L ? serviceTimeout : -1L
+                                );
+
+                        callable = new PackageDeploymentCallable(
+                                clientConfig, listener,
+                                selectedPackage.getKey(), getPackageInstallOptions(), getExistingPackageBehavior());
                     }
 
                     result = result.combine(selectedPackage.getValue().act(callable));
@@ -247,11 +301,14 @@ public class DeployPackagesBuilder extends Builder implements PackageDeploymentR
     private Map<PackId, FilePath> selectPackages(final AbstractBuild<?, ?> build, final BuildListener listener) throws IOException, InterruptedException {
         Map<PackId, FilePath> found = new HashMap<PackId, FilePath>();
 
+        final String fLocalDirectory = getLocalDirectory(build, listener);
+        FilePath dir = build.getWorkspace().child(fLocalDirectory);
+
         try {
             List<FilePath> listed = new ArrayList<FilePath>();
             //listed.addAll(build.getWorkspace().list());
-            listed.addAll(Arrays.asList(build.getWorkspace().list("**/*.jar")));
-            listed.addAll(Arrays.asList(build.getWorkspace().list("**/*.zip")));
+            listed.addAll(Arrays.asList(dir.list("**/*.jar")));
+            listed.addAll(Arrays.asList(dir.list("**/*.zip")));
 
             Collections.sort(
                     listed, Collections.reverseOrder(
@@ -342,10 +399,11 @@ public class DeployPackagesBuilder extends Builder implements PackageDeploymentR
         try {
             return parseBaseUrls(TokenMacro.expandAll(build, listener, getBaseUrls()));
         } catch (Exception e) {
-            listener.error("failed to expand tokens in: %n%s", getBaseUrls());
+            listener.error("failed to expand tokens in: %s%n", getBaseUrls());
         }
         return parseBaseUrls(getBaseUrls());
     }
+
 
     private List<String> listBaseUrls() {
         return parseBaseUrls(getBaseUrls());
@@ -361,20 +419,40 @@ public class DeployPackagesBuilder extends Builder implements PackageDeploymentR
         return Collections.unmodifiableList(_baseUrls);
     }
 
+    private String getUsername(AbstractBuild<?, ?> build, TaskListener listener) {
+        try {
+            return TokenMacro.expandAll(build, listener, getUsername());
+        } catch (Exception e) {
+            listener.error("failed to expand tokens in: %s%n", getUsername());
+        }
+        return getUsername();
+    }
+
+    private String getPassword(AbstractBuild<?, ?> build, TaskListener listener) {
+        try {
+            return TokenMacro.expandAll(build, listener, getPassword());
+        } catch (Exception e) {
+            listener.error("failed to expand tokens in password %n", getPassword());
+        }
+        return getPassword();
+    }
+
+    private String getLocalDirectory(AbstractBuild<?, ?> build, TaskListener listener) {
+        try {
+            return TokenMacro.expandAll(build, listener, getLocalDirectory());
+        } catch (Exception e) {
+            listener.error("failed to expand tokens in: %s%n", getLocalDirectory());
+        }
+        return getLocalDirectory();
+    }
+
     @Override
     public DescriptorImpl getDescriptor() {
         return (DescriptorImpl) super.getDescriptor();
     }
 
     @Extension // This indicates to Jenkins that this is an implementation of an extension point.
-    public static final class DescriptorImpl extends BuildStepDescriptor<Builder> implements AHCFactory {
-
-        private static final AsyncHttpClientConfig DEFAULT_CONFIG = new AsyncHttpClientConfig.Builder().build();
-
-        private int connectionTimeoutInMs = DEFAULT_CONFIG.getConnectionTimeoutInMs();
-        private int idleConnectionTimeoutInMs = DEFAULT_CONFIG.getIdleConnectionTimeoutInMs();
-        private int requestTimeoutInMs = DEFAULT_CONFIG.getRequestTimeoutInMs();
-        private int webSocketIdleTimeoutInMs = DEFAULT_CONFIG.getWebSocketIdleTimeoutInMs();
+    public static final class DescriptorImpl extends BuildStepDescriptor<Builder> {
 
         public DescriptorImpl() {
             load();
@@ -395,38 +473,6 @@ public class DeployPackagesBuilder extends Builder implements PackageDeploymentR
             req.bindJSON(this, json.getJSONObject("graniteDeployPackages"));
             save();
             return true;
-        }
-
-        public int getConnectionTimeoutInMs() {
-            return connectionTimeoutInMs;
-        }
-
-        public void setConnectionTimeoutInMs(int connectionTimeoutInMs) {
-            this.connectionTimeoutInMs = connectionTimeoutInMs;
-        }
-
-        public int getIdleConnectionTimeoutInMs() {
-            return idleConnectionTimeoutInMs;
-        }
-
-        public void setIdleConnectionTimeoutInMs(int idleConnectionTimeoutInMs) {
-            this.idleConnectionTimeoutInMs = idleConnectionTimeoutInMs;
-        }
-
-        public int getRequestTimeoutInMs() {
-            return requestTimeoutInMs;
-        }
-
-        public void setRequestTimeoutInMs(int requestTimeoutInMs) {
-            this.requestTimeoutInMs = requestTimeoutInMs;
-        }
-
-        public int getWebSocketIdleTimeoutInMs() {
-            return webSocketIdleTimeoutInMs;
-        }
-
-        public void setWebSocketIdleTimeoutInMs(int webSocketIdleTimeoutInMs) {
-            this.webSocketIdleTimeoutInMs = webSocketIdleTimeoutInMs;
         }
 
         public FormValidation doCheckBaseUrls(@QueryParameter String baseUrls) {
@@ -450,16 +496,6 @@ public class DeployPackagesBuilder extends Builder implements PackageDeploymentR
             return model;
         }
 
-        public AsyncHttpClient newInstance() {
-            return new AsyncHttpClient(
-                    new AsyncHttpClientConfig.Builder()
-                            .setProxyServer(AHCUtils.getProxyServer())
-                            .setConnectionTimeoutInMs(this.connectionTimeoutInMs)
-                            .setIdleConnectionTimeoutInMs(this.idleConnectionTimeoutInMs)
-                            .setRequestTimeoutInMs(this.requestTimeoutInMs)
-                            .setWebSocketIdleTimeoutInMs(this.webSocketIdleTimeoutInMs)
-                            .build());
-        }
     }
 
     static class DebugPackageCallable implements FilePath.FileCallable<Result> {

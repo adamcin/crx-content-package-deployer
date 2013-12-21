@@ -25,6 +25,51 @@
   ~ For more information, please refer to <http://unlicense.org/>
   -->
 
-<div>
-    Change the way content ACL's included in the package filter scope are handled during installation.
-</div>
+<j:jelly xmlns:j="jelly:core" xmlns:f="/lib/form">
+    <!--
+      This jelly script is used for per-project configuration.
+
+      See global.jelly for a general discussion about jelly script.
+    -->
+
+    <f:entry title="Base URL" field="baseUrl">
+        <f:textbox/>
+    </f:entry>
+
+    <f:entry title="Package ID" field="packageIds">
+        <f:expandableTextbox default="*"/>
+    </f:entry>
+
+    <f:entry title="Ignore Errors" field="ignoreErrors">
+        <f:checkbox />
+    </f:entry>
+
+    <f:entry title="Local Directory" field="localDirectory">
+        <f:textbox/>
+    </f:entry>
+
+    <f:advanced>
+        <f:entry title="Username" field="username">
+            <f:textbox default="admin" />
+        </f:entry>
+
+        <f:entry title="Password" field="password">
+            <f:password default="admin"/>
+        </f:entry>
+
+        <f:entry title="HTTP Signature Login" field="signatureLogin">
+            <f:checkbox />
+        </f:entry>
+
+        <f:entry title="Request Timeout" field="requestTimeout">
+            <f:number default="0" />
+        </f:entry>
+
+        <f:entry title="Service Timeout" field="serviceTimeout">
+            <f:number default="0" />
+        </f:entry>
+
+    </f:advanced>
+
+
+</j:jelly>

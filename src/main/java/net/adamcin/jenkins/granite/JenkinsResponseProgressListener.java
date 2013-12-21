@@ -27,38 +27,37 @@
 
 package net.adamcin.jenkins.granite;
 
-import net.adamcin.granite.client.packman.ACHandling;
-
-import java.io.Serializable;
+import hudson.model.TaskListener;
+import net.adamcin.granite.client.packman.ResponseProgressListener;
 
 /**
- * Created with IntelliJ IDEA.
- * User: madamcin
- * Date: 6/20/13
- * Time: 1:57 PM
- * To change this template use File | Settings | File Templates.
  */
-public class PackageInstallOptions implements Serializable {
+public class JenkinsResponseProgressListener implements ResponseProgressListener {
 
-    private final boolean recursive;
-    private final int autosave;
-    private final ACHandling acHandling;
+    final TaskListener listener;
 
-    public PackageInstallOptions(boolean recursive, int autosave, ACHandling acHandling) {
-        this.recursive = recursive;
-        this.autosave = autosave;
-        this.acHandling = acHandling == null ? ACHandling.IGNORE : acHandling;
+    public JenkinsResponseProgressListener(TaskListener listener) {
+        this.listener = listener;
     }
 
-    public boolean isRecursive() {
-        return recursive;
+    public void onStart(String title) {
+        listener.getLogger().printf("%s%n", title);
     }
 
-    public int getAutosave() {
-        return autosave;
+    public void onLog(String message) {
+        listener.getLogger().printf("%s%n", message);
     }
 
-    public ACHandling getAcHandling() {
-        return acHandling;
+    public void onMessage(String message) {
+        listener.getLogger().printf("M %s%n", message);
     }
+
+    public void onProgress(String action, String path) {
+        listener.getLogger().printf("%s %s%n", action, path);
+    }
+
+    public void onError(String path, String error) {
+        listener.error("E %s (%s)", path, error);
+    }
+
 }

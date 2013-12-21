@@ -25,6 +25,26 @@
   ~ For more information, please refer to <http://unlicense.org/>
   -->
 
-<div>
-    Change the way content ACL's included in the package filter scope are handled during installation.
-</div>
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler"
+         xmlns:f="/lib/form"
+        >
+    <j:set var="fullDescription" value="List of packages on ${it.baseUrl}. ${it.description}"/>
+    <f:entry title="${it.name}" description="${fullDescription}">
+        <div name="parameter" description="${fullDescription}">
+            <j:set var="multiselect" value="${it.multiselect}"/>
+            <input type="hidden" name="name" value="${it.name}" />
+            <j:choose>
+                <j:when test="${multiselect}">
+                    <select name="value" multiple="multiple" size="${it.visibleItemCount}">
+                        <st:include page="selectContent.jelly"/>
+                    </select>
+                </j:when>
+                <j:otherwise>
+                    <select name="value">
+                        <st:include page="selectContent.jelly"/>
+                    </select>
+                </j:otherwise>
+            </j:choose>
+        </div>
+    </f:entry>
+</j:jelly>

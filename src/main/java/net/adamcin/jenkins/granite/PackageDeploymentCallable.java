@@ -1,123 +1,124 @@
+/*
+ * This is free and unencumbered software released into the public domain.
+ *
+ * Anyone is free to copy, modify, publish, use, compile, sell, or
+ * distribute this software, either in source code form or as a compiled
+ * binary, for any purpose, commercial or non-commercial, and by any
+ * means.
+ *
+ * In jurisdictions that recognize copyright laws, the author or authors
+ * of this software dedicate any and all copyright interest in the
+ * software to the public domain. We make this dedication for the benefit
+ * of the public at large and to the detriment of our heirs and
+ * successors. We intend this dedication to be an overt act of
+ * relinquishment in perpetuity of all present and future rights to this
+ * software under copyright law.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+ * IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+ * OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+ * ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+ * OTHER DEALINGS IN THE SOFTWARE.
+ *
+ * For more information, please refer to <http://unlicense.org/>
+ */
+
 package net.adamcin.jenkins.granite;
 
-import com.cloudbees.jenkins.plugins.sshcredentials.SSHUserPrivateKey;
-import com.cloudbees.plugins.credentials.CredentialsProvider;
-import com.ning.http.client.AsyncHttpClient;
-import hudson.FilePath;
 import hudson.model.Result;
 import hudson.model.TaskListener;
 import hudson.remoting.VirtualChannel;
 import net.adamcin.granite.client.packman.DetailedResponse;
 import net.adamcin.granite.client.packman.ListResponse;
 import net.adamcin.granite.client.packman.PackId;
+import net.adamcin.granite.client.packman.PackageManagerClient;
 import net.adamcin.granite.client.packman.ResponseProgressListener;
 import net.adamcin.granite.client.packman.SimpleResponse;
-import net.adamcin.granite.client.packman.UnauthorizedException;
-import net.adamcin.granite.client.packman.async.AsyncPackageManagerClient;
-import net.adamcin.sshkey.api.DefaultKeychain;
-import net.adamcin.sshkey.api.Key;
-import net.adamcin.sshkey.api.Signer;
-import net.adamcin.sshkey.bouncycastle.PEMHelper;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.List;
 
-public final class PackageDeploymentCallable implements FilePath.FileCallable<Result>, ResponseProgressListener {
+public final class PackageDeploymentCallable extends AbstractClientFileCallable<Result> {
 
-    private final PackageDeploymentRequest request;
-    private final AHCFactory ahcFactory;
-    private final String baseUrl;
     private final PackId packId;
-    private final TaskListener listener;
     private final PackageInstallOptions options;
     private final ExistingPackageBehavior behavior;
-    private final long requestTimeout;
-    private final long serviceTimeout;
+    private final ResponseProgressListener progressListener;
 
-    public PackageDeploymentCallable(PackageDeploymentRequest request, AHCFactory ahcFactory, String baseUrl, PackId packId,
-                                     TaskListener listener, long requestTimeout, long serviceTimeout) {
-        this.request = request;
-        this.ahcFactory = ahcFactory;
-        this.options = request.getPackageInstallOptions();
-        this.behavior = request.getExistingPackageBehavior();
-        this.baseUrl = baseUrl;
+    public PackageDeploymentCallable(GraniteClientConfig clientConfig, TaskListener listener, PackId packId, PackageInstallOptions options, ExistingPackageBehavior behavior) {
+        super(clientConfig, listener);
+        this.progressListener = new JenkinsResponseProgressListener(this.listener);
+        this.options = options;
+        this.behavior = behavior;
         this.packId = packId;
-        this.listener = listener;
-        this.requestTimeout = requestTimeout;
-        this.serviceTimeout = serviceTimeout;
+    }
+
+    private class Execution implements GraniteClientCallable<Result> {
+        private final File file;
+
+        private Execution(File file) {
+            this.file = file;
+        }
+
+        public Result doExecute(PackageManagerClient client) throws Exception {
+            listener.getLogger().printf("Deploying %s to %s%n", file, client.getConsoleUiUrl(packId));
+            client.waitForService();
+            if (client.existsOnServer(packId)) {
+                listener.getLogger().println("Found existing package.");
+                if (!PackageDeploymentCallable.this.handleExisting(client, packId)) {
+                    return Result.FAILURE;
+                } else if (behavior == ExistingPackageBehavior.SKIP) {
+                    listener.getLogger().println("Will skip package upload and return SUCCESS.");
+                    return Result.SUCCESS;
+                }
+            }
+
+            client.waitForService();
+            listener.getLogger().println("Will attempt to upload package.");
+
+            SimpleResponse r_upload = client.upload(file, behavior == ExistingPackageBehavior.OVERWRITE, packId);
+            if (r_upload.isSuccess()) {
+                progressListener.onLog(r_upload.getMessage());
+                listener.getLogger().println("Will attempt to install package.");
+
+                DetailedResponse r_install = client.install(packId,
+                                                            options.isRecursive(),
+                                                            options.getAutosave(),
+                                                            options.getAcHandling(),
+                                                            progressListener);
+                if (r_install.isSuccess()) {
+                    progressListener.onLog(r_upload.getMessage());
+                    if (r_install.hasErrors()) {
+                        //listener.getLogger().println("should be unstable");
+                        return Result.UNSTABLE;
+                    } else {
+                        return Result.SUCCESS;
+                    }
+                } else {
+                    listener.fatalError("%s", r_install.getMessage());
+                    return Result.FAILURE;
+                }
+
+            } else {
+                listener.fatalError(r_upload.getMessage());
+                return Result.FAILURE;
+            }
+        }
     }
 
     public Result invoke(File f, VirtualChannel channel) throws IOException, InterruptedException {
-
-        AsyncHttpClient ahcClient = null;
-
         try {
-            ahcClient = ahcFactory.newInstance();
-            AsyncPackageManagerClient client = new AsyncPackageManagerClient(ahcClient);
-            client.setBaseUrl(baseUrl);
-            client.setRequestTimeout(requestTimeout);
-            client.setServiceTimeout(serviceTimeout);
-
-            listener.getLogger().printf("Deploying %s to %s%n", f,
-                                        client.getConsoleUiUrl(packId));
-            if (login(client)) {
-
-                client.waitForService();
-                if (client.existsOnServer(packId)) {
-                    listener.getLogger().println("Found existing package.");
-                    if (!this.handleExisting(client, packId)) {
-                        return Result.FAILURE;
-                    } else if (behavior == ExistingPackageBehavior.SKIP) {
-                        listener.getLogger().println("Will skip package upload and return SUCCESS.");
-                        return Result.SUCCESS;
-                    }
-                }
-
-                client.waitForService();
-                listener.getLogger().println("Will attempt to upload package.");
-
-                SimpleResponse r_upload = client.upload(f, behavior == ExistingPackageBehavior.OVERWRITE, packId);
-                if (r_upload.isSuccess()) {
-                    this.onLog(r_upload.getMessage());
-                    listener.getLogger().println("Will attempt to install package.");
-
-                    DetailedResponse r_install = client.install(packId,
-                                                                options.isRecursive(),
-                                                                options.getAutosave(),
-                                                                options.getAcHandling(),
-                                                                this);
-                    if (r_install.isSuccess()) {
-                        this.onLog(r_upload.getMessage());
-                        if (r_install.hasErrors()) {
-                            //listener.getLogger().println("should be unstable");
-                            return Result.UNSTABLE;
-                        } else {
-                            return Result.SUCCESS;
-                        }
-                    } else {
-                        listener.fatalError("%s", r_install.getMessage());
-                        return Result.FAILURE;
-                    }
-
-                } else {
-                    listener.fatalError(r_upload.getMessage());
-                }
-            } else {
-                listener.fatalError("Failed to login to %s", baseUrl);
-            }
+            return GraniteClientExecutor.execute(new Execution(f), clientConfig, listener);
         } catch (Exception e) {
             e.printStackTrace(listener.fatalError("Failed to deploy package: %s", e.getMessage()));
-        } finally {
-            if (ahcClient != null) {
-                ahcClient.close();
-            }
         }
 
         return Result.FAILURE;
     }
 
-    private boolean handleExisting(AsyncPackageManagerClient client, PackId packId) throws Exception {
+    private boolean handleExisting(PackageManagerClient client, PackId packId) throws Exception {
         if (behavior == ExistingPackageBehavior.IGNORE
                 || behavior == ExistingPackageBehavior.OVERWRITE
                 || behavior == ExistingPackageBehavior.SKIP) {
@@ -130,9 +131,9 @@ public final class PackageDeploymentCallable implements FilePath.FileCallable<Re
             ListResponse r_list = client.list(packId, false);
             if (!r_list.getResults().isEmpty() && r_list.getResults().get(0).isHasSnapshot()) {
                 this.listener.getLogger().println("Will attempt to uninstall package.");
-                DetailedResponse r_uninstall = client.uninstall(packId, this);
+                DetailedResponse r_uninstall = client.uninstall(packId, progressListener);
                 if (r_uninstall.isSuccess()) {
-                    this.onLog(r_uninstall.getMessage());
+                    progressListener.onLog(r_uninstall.getMessage());
                 } else {
                     this.listener.fatalError("Failed to uninstall package: %s", r_uninstall.getMessage());
                     return false;
@@ -147,7 +148,7 @@ public final class PackageDeploymentCallable implements FilePath.FileCallable<Re
             this.listener.getLogger().println("Will attempt to delete package.");
             SimpleResponse r_delete = client.delete(packId);
             if (r_delete.isSuccess()) {
-                this.onLog(r_delete.getMessage());
+                progressListener.onLog(r_delete.getMessage());
             } else {
                 this.listener.fatalError("%s", r_delete.getMessage());
                 return false;
@@ -155,58 +156,5 @@ public final class PackageDeploymentCallable implements FilePath.FileCallable<Re
         }
 
         return true;
-    }
-
-    private boolean login(AsyncPackageManagerClient client) throws IOException {
-        try {
-            client.waitForService();
-        } catch (UnauthorizedException e) {
-            // ignore this, since we want to login regardless.
-        } catch (IOException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new IOException("Failed to wait for service to check login status", e);
-        }
-
-        if (request.isSshKeyLogin()) {
-            List<SSHUserPrivateKey> keys = CredentialsProvider.lookupCredentials(SSHUserPrivateKey.class);
-            DefaultKeychain keychain = new DefaultKeychain();
-            for (SSHUserPrivateKey key : keys) {
-                char[] passphrase = null;
-                if (key.getPassphrase() != null) {
-                    passphrase = key.getPassphrase().getEncryptedValue().toCharArray();
-                }
-
-                Key sshkey = PEMHelper.readKey(key.getPrivateKey().getBytes("UTF-8"), passphrase);
-                if (sshkey != null) {
-                    keychain.add(sshkey);
-                }
-            }
-
-            Signer signer = new Signer(keychain);
-            return client.login(request.getUsername(), signer);
-        } else {
-            return client.login(request.getUsername(), request.getPassword());
-        }
-    }
-
-    public void onStart(String title) {
-        listener.getLogger().printf("%s%n", title);
-    }
-
-    public void onLog(String message) {
-        listener.getLogger().printf("%s%n", message);
-    }
-
-    public void onMessage(String message) {
-        listener.getLogger().printf("M %s%n", message);
-    }
-
-    public void onProgress(String action, String path) {
-        listener.getLogger().printf("%s %s%n", action, path);
-    }
-
-    public void onError(String path, String error) {
-        listener.error("E %s (%s)", path, error);
     }
 }

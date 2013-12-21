@@ -25,6 +25,20 @@
   ~ For more information, please refer to <http://unlicense.org/>
   -->
 
-<div>
-    Change the way content ACL's included in the package filter scope are handled during installation.
-</div>
+<j:jelly xmlns:j="jelly:core" xmlns:f="/lib/form">
+    <f:section title="[Granite] Granite Async HTTP Client Factory" name="GraniteAHCFactory">
+
+        <f:entry title="Request Timeout in MS" field="requestTimeoutInMs">
+            <f:textbox />
+        </f:entry>
+
+        <f:entry title="Connection Timeout in MS" field="connectionTimeoutInMs">
+            <f:textbox />
+        </f:entry>
+
+        <f:entry title="Idle Connection Timeout in MS" field="idleConnectionTimeoutInMs">
+            <f:textbox />
+        </f:entry>
+
+    </f:section>
+</j:jelly>

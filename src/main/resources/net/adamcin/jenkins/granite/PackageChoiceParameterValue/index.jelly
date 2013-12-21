@@ -25,6 +25,10 @@
   ~ For more information, please refer to <http://unlicense.org/>
   -->
 
-<div>
-    Change the way content ACL's included in the package filter scope are handled during installation.
-</div>
+<j:jelly xmlns:j="jelly:core"
+         xmlns:f="/lib/form"
+        >
+    <f:entry name="value" title="${it.name}" description="${it.description}">
+        ${it.value}
+    </f:entry>
+</j:jelly>

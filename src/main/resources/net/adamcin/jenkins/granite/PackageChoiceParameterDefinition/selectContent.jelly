@@ -25,6 +25,18 @@
   ~ For more information, please refer to <http://unlicense.org/>
   -->
 
-<div>
-    Change the way content ACL's included in the package filter scope are handled during installation.
-</div>
+<j:jelly xmlns:j="jelly:core"
+        >
+    <j:set var="selectedPackIds" value="${it.selectedPackIds}"/>
+    <j:set var="packList" value="${it.packageList}"/>
+    <j:forEach var="packId" items="${packList}">
+        <j:choose>
+            <j:when test="${selectedPackageIds.contains(packId)}">
+                <option value="${packId}" selected="selected">${packId}</option>
+            </j:when>
+            <j:otherwise>
+                <option value="${packId}">${packId}</option>
+            </j:otherwise>
+        </j:choose>
+    </j:forEach>
+</j:jelly>

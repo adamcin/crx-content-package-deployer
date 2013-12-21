@@ -26,40 +26,31 @@
   -->
 
 <j:jelly xmlns:j="jelly:core" xmlns:f="/lib/form">
-    <!--
-      This jelly script is used for per-project configuration.
 
-      See global.jelly for a general discussion about jelly script.
-    -->
 
-    <f:entry title="Base URL" field="baseUrls">
-        <f:expandableTextbox />
-    </f:entry>
-
-    <f:entry title="Package ID" field="packageIdFilters">
-        <f:expandableTextbox default="*"/>
-    </f:entry>
-
-    <f:entry title="Local Directory" field="localDirectory">
+    <f:entry title="Name" field="name">
         <f:textbox/>
     </f:entry>
 
-    <f:entry title="Existing package behavior" field="behavior">
-        <f:select />
+    <f:entry title="Description" field="description">
+        <f:textbox/>
     </f:entry>
 
-    <f:entry title="Access Control Handling" field="acHandling">
-        <f:select />
+    <f:entry title="Base URL" field="baseUrl">
+        <f:textbox/>
     </f:entry>
 
-    <f:entry title="Disable for Job Testing" field="disableForJobTesting">
+    <f:entry title="Package ID Filter" field="packageIdFilter">
+        <f:textbox/>
+    </f:entry>
+
+    <f:entry title="Multiselect" field="multiselect">
         <f:checkbox />
     </f:entry>
 
-
     <f:advanced>
         <f:entry title="Username" field="username">
-            <f:textbox default="admin" />
+            <f:textbox default="admin"/>
         </f:entry>
 
         <f:entry title="Password" field="password">
@@ -67,26 +58,29 @@
         </f:entry>
 
         <f:entry title="HTTP Signature Login" field="signatureLogin">
-            <f:checkbox />
-        </f:entry>
-
-        <f:entry title="Install sub-packages" field="recursive">
-            <f:checkbox />
-        </f:entry>
-
-        <f:entry title="Auto Save" field="autosave">
-            <f:number default="1024" />
+            <f:checkbox/>
         </f:entry>
 
         <f:entry title="Request Timeout" field="requestTimeout">
-            <f:number default="0" />
+            <f:number default="0"/>
         </f:entry>
 
         <f:entry title="Service Timeout" field="serviceTimeout">
-            <f:number default="0" />
+            <f:number default="0"/>
+        </f:entry>
+
+        <f:entry title="Query" field="query">
+            <f:textbox/>
+        </f:entry>
+
+        <f:entry title="Exclude Not Installed" field="excludeNotInstalled">
+            <f:checkbox />
+        </f:entry>
+
+        <f:entry title="Exclude Modified" field="excludeModified">
+            <f:checkbox />
         </f:entry>
 
     </f:advanced>
-
 
 </j:jelly>

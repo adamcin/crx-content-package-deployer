@@ -27,38 +27,19 @@
 
 package net.adamcin.jenkins.granite;
 
-import net.adamcin.granite.client.packman.ACHandling;
-
-import java.io.Serializable;
+import hudson.FilePath;
+import hudson.model.TaskListener;
 
 /**
- * Created with IntelliJ IDEA.
- * User: madamcin
- * Date: 6/20/13
- * Time: 1:57 PM
- * To change this template use File | Settings | File Templates.
  */
-public class PackageInstallOptions implements Serializable {
+public abstract class AbstractClientFileCallable<T> implements FilePath.FileCallable<T> {
 
-    private final boolean recursive;
-    private final int autosave;
-    private final ACHandling acHandling;
+    protected final GraniteClientConfig clientConfig;
+    protected final TaskListener listener;
 
-    public PackageInstallOptions(boolean recursive, int autosave, ACHandling acHandling) {
-        this.recursive = recursive;
-        this.autosave = autosave;
-        this.acHandling = acHandling == null ? ACHandling.IGNORE : acHandling;
+    protected AbstractClientFileCallable(GraniteClientConfig clientConfig, TaskListener listener) {
+        this.clientConfig = clientConfig;
+        this.listener = listener;
     }
 
-    public boolean isRecursive() {
-        return recursive;
-    }
-
-    public int getAutosave() {
-        return autosave;
-    }
-
-    public ACHandling getAcHandling() {
-        return acHandling;
-    }
 }

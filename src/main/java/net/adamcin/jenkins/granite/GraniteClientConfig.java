@@ -27,38 +27,49 @@
 
 package net.adamcin.jenkins.granite;
 
-import net.adamcin.granite.client.packman.ACHandling;
-
 import java.io.Serializable;
 
 /**
- * Created with IntelliJ IDEA.
- * User: madamcin
- * Date: 6/20/13
- * Time: 1:57 PM
- * To change this template use File | Settings | File Templates.
  */
-public class PackageInstallOptions implements Serializable {
+public final class GraniteClientConfig implements Serializable {
+    private final String baseUrl;
+    private final String username;
+    private final String password;
+    private final boolean signatureLogin;
+    private final long requestTimeout;
+    private final long serviceTimeout;
 
-    private final boolean recursive;
-    private final int autosave;
-    private final ACHandling acHandling;
-
-    public PackageInstallOptions(boolean recursive, int autosave, ACHandling acHandling) {
-        this.recursive = recursive;
-        this.autosave = autosave;
-        this.acHandling = acHandling == null ? ACHandling.IGNORE : acHandling;
+    public GraniteClientConfig(String baseUrl, String username, String password, boolean signatureLogin,
+                               long requestTimeout, long serviceTimeout) {
+        this.baseUrl = baseUrl;
+        this.username = username;
+        this.password = password;
+        this.signatureLogin = signatureLogin;
+        this.requestTimeout = requestTimeout;
+        this.serviceTimeout = serviceTimeout;
     }
 
-    public boolean isRecursive() {
-        return recursive;
+    public String getBaseUrl() {
+        return baseUrl;
     }
 
-    public int getAutosave() {
-        return autosave;
+    public String getUsername() {
+        return username;
     }
 
-    public ACHandling getAcHandling() {
-        return acHandling;
+    public String getPassword() {
+        return password;
+    }
+
+    public boolean isSignatureLogin() {
+        return signatureLogin;
+    }
+
+    public long getRequestTimeout() {
+        return requestTimeout;
+    }
+
+    public long getServiceTimeout() {
+        return serviceTimeout;
     }
 }
