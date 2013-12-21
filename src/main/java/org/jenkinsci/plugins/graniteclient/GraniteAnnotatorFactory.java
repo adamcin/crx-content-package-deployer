@@ -25,39 +25,31 @@
  * For more information, please refer to <http://unlicense.org/>
  */
 
-package net.adamcin.jenkins.granite;
+package org.jenkinsci.plugins.graniteclient;
 
-import hudson.model.TaskListener;
-import net.adamcin.granite.client.packman.ResponseProgressListener;
+import hudson.Extension;
+import hudson.console.ConsoleAnnotator;
+import hudson.console.ConsoleAnnotatorFactory;
+import hudson.model.Run;
+import org.jvnet.hudson.plugins.collapsingconsolesections.CollapsingSectionAnnotator;
+import org.jvnet.hudson.plugins.collapsingconsolesections.CollapsingSectionNote;
+import org.jvnet.hudson.plugins.collapsingconsolesections.CollapsingSectionsConfiguration;
 
-/**
- */
-public class JenkinsResponseProgressListener implements ResponseProgressListener {
+@Extension(optional = true)
+public class GraniteAnnotatorFactory extends ConsoleAnnotatorFactory<Class<Run>> {
 
-    final TaskListener listener;
-
-    public JenkinsResponseProgressListener(TaskListener listener) {
-        this.listener = listener;
+    @Override
+    public ConsoleAnnotator newInstance(Class<Run> context) {
+        CollapsingSectionNote uninstallSection = new CollapsingSectionNote(
+                "[Granite] Uninstalling package",
+                "Uninstalling content",
+                "Package uninstalled", false);
+        CollapsingSectionNote installSection = new CollapsingSectionNote(
+                "[Granite] Installing package",
+                "Installing content",
+                "Package uploaded", false);
+        return new CollapsingSectionAnnotator(
+                new CollapsingSectionsConfiguration(
+                        new CollapsingSectionNote[]{uninstallSection, installSection}, false));
     }
-
-    public void onStart(String title) {
-        listener.getLogger().printf("%s%n", title);
-    }
-
-    public void onLog(String message) {
-        listener.getLogger().printf("%s%n", message);
-    }
-
-    public void onMessage(String message) {
-        listener.getLogger().printf("M %s%n", message);
-    }
-
-    public void onProgress(String action, String path) {
-        listener.getLogger().printf("%s %s%n", action, path);
-    }
-
-    public void onError(String path, String error) {
-        listener.error("E %s (%s)", path, error);
-    }
-
 }

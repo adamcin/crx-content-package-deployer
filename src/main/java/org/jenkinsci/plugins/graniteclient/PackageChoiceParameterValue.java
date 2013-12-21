@@ -25,31 +25,17 @@
  * For more information, please refer to <http://unlicense.org/>
  */
 
-package net.adamcin.jenkins.granite;
+package org.jenkinsci.plugins.graniteclient;
 
-import hudson.Extension;
-import hudson.console.ConsoleAnnotator;
-import hudson.console.ConsoleAnnotatorFactory;
-import hudson.model.Run;
-import org.jvnet.hudson.plugins.collapsingconsolesections.CollapsingSectionAnnotator;
-import org.jvnet.hudson.plugins.collapsingconsolesections.CollapsingSectionNote;
-import org.jvnet.hudson.plugins.collapsingconsolesections.CollapsingSectionsConfiguration;
+import hudson.model.StringParameterValue;
+import org.kohsuke.stapler.DataBoundConstructor;
 
-@Extension(optional = true)
-public class GraniteAnnotatorFactory extends ConsoleAnnotatorFactory<Class<Run>> {
+/**
+ */
+public class PackageChoiceParameterValue extends StringParameterValue {
 
-    @Override
-    public ConsoleAnnotator newInstance(Class<Run> context) {
-        CollapsingSectionNote uninstallSection = new CollapsingSectionNote(
-                "[Granite] Uninstalling package",
-                "Uninstalling content",
-                "Package uninstalled", false);
-        CollapsingSectionNote installSection = new CollapsingSectionNote(
-                "[Granite] Installing package",
-                "Installing content",
-                "Package uploaded", false);
-        return new CollapsingSectionAnnotator(
-                new CollapsingSectionsConfiguration(
-                        new CollapsingSectionNote[]{uninstallSection, installSection}, false));
+    @DataBoundConstructor
+    public PackageChoiceParameterValue(String name, String value) {
+        super(name, value);
     }
 }

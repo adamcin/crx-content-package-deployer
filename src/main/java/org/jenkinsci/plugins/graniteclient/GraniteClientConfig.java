@@ -25,12 +25,51 @@
  * For more information, please refer to <http://unlicense.org/>
  */
 
-package net.adamcin.jenkins.granite;
-
-import com.ning.http.client.AsyncHttpClient;
+package org.jenkinsci.plugins.graniteclient;
 
 import java.io.Serializable;
 
-public interface AHCFactory extends Serializable {
-    AsyncHttpClient newInstance();
+/**
+ */
+public final class GraniteClientConfig implements Serializable {
+    private final String baseUrl;
+    private final String username;
+    private final String password;
+    private final boolean signatureLogin;
+    private final long requestTimeout;
+    private final long serviceTimeout;
+
+    public GraniteClientConfig(String baseUrl, String username, String password, boolean signatureLogin,
+                               long requestTimeout, long serviceTimeout) {
+        this.baseUrl = baseUrl;
+        this.username = username;
+        this.password = password;
+        this.signatureLogin = signatureLogin;
+        this.requestTimeout = requestTimeout;
+        this.serviceTimeout = serviceTimeout;
+    }
+
+    public String getBaseUrl() {
+        return baseUrl;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public boolean isSignatureLogin() {
+        return signatureLogin;
+    }
+
+    public long getRequestTimeout() {
+        return requestTimeout;
+    }
+
+    public long getServiceTimeout() {
+        return serviceTimeout;
+    }
 }

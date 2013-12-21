@@ -33,13 +33,35 @@
         <version>1.509.1</version><!-- which version of Jenkins is this plugin built against? -->
     </parent>
 
-    <groupId>org.jenkins-ci.plugins</groupId>
-    <artifactId>jenkins-granite-client</artifactId>
+    <artifactId>granite-client</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>hpi</packaging>
 
-    <name>Jenkins Granite Client</name>
+    <name>Granite Client Plugin</name>
     <description>Deploys content packages to Adobe Granite applications, like Adobe CQ 5.4, CQ 5.5, and AEM 5.6</description>
+
+    <inceptionYear>2013</inceptionYear>
+
+    <developers>
+        <developer>
+            <id>madamcin</id>
+            <name>Mark Adamcin</name>
+            <email>adamcin@gmail.com</email>
+            <url>http://adamcin.net</url>
+            <organization>Acquity Group</organization>
+            <organizationUrl>http://www.acquitygroup.com</organizationUrl>
+            <roles>
+                <role>architect</role>
+                <role>developer</role>
+            </roles>
+        </developer>
+    </developers>
+
+    <licenses>
+        <license>
+            <name>Public Domain (Unlicense)</name>
+        </license>
+    </licenses>
 
     <!-- get every artifact through repo.jenkins-ci.org, which proxies all the artifacts that we need -->
     <repositories>
@@ -57,6 +79,8 @@
     </pluginRepositories>
 
     <properties>
+        <project.build.outputEncoding>UTF-8</project.build.outputEncoding>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <!--
           explicitly specifying the latest version here because one we get from the parent POM
           tends to lag behind a bit
@@ -65,35 +89,25 @@
     </properties>
 
     <dependencies>
-
         <dependency>
             <groupId>net.adamcin.granite.client</groupId>
             <artifactId>net.adamcin.granite.client.packman</artifactId>
-            <version>0.5.0-SNAPSHOT</version>
+            <version>0.6.0</version>
         </dependency>
-
         <dependency>
             <groupId>net.adamcin.httpsig</groupId>
             <artifactId>httpsig-api</artifactId>
-            <version>0.5.0-SNAPSHOT</version>
+            <version>0.6.0</version>
         </dependency>
-
         <dependency>
             <groupId>net.adamcin.httpsig</groupId>
             <artifactId>httpsig-helpers</artifactId>
-            <version>0.5.0-SNAPSHOT</version>
+            <version>0.6.0</version>
         </dependency>
-
         <dependency>
             <groupId>net.adamcin.httpsig</groupId>
             <artifactId>httpsig-bouncycastle</artifactId>
-            <version>0.5.0-SNAPSHOT</version>
-        </dependency>
-
-        <dependency>
-            <groupId>net.adamcin.sling</groupId>
-            <artifactId>net.adamcin.sling.auth.httpsig</artifactId>
-            <version>0.5.0-SNAPSHOT</version>
+            <version>0.6.0</version>
         </dependency>
 
         <dependency>
@@ -101,26 +115,22 @@
             <artifactId>async-http-client</artifactId>
             <version>1.7.8</version>
         </dependency>
-
         <dependency>
             <groupId>org.jvnet.hudson.plugins</groupId>
             <artifactId>collapsing-console-sections</artifactId>
             <version>1.4.1</version>
             <optional>true</optional>
         </dependency>
-
         <dependency>
             <groupId>org.jenkins-ci.plugins</groupId>
             <artifactId>token-macro</artifactId>
             <version>1.5.1</version>
         </dependency>
-
         <dependency>
             <groupId>org.jenkins-ci.plugins</groupId>
             <artifactId>ssh-credentials</artifactId>
             <version>0.3</version>
         </dependency>
-
         <dependency>
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcpkix-jdk15on</artifactId>

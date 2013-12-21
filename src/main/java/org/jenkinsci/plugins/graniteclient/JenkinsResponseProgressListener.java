@@ -25,51 +25,39 @@
  * For more information, please refer to <http://unlicense.org/>
  */
 
-package net.adamcin.jenkins.granite;
+package org.jenkinsci.plugins.graniteclient;
 
-import java.io.Serializable;
+import hudson.model.TaskListener;
+import net.adamcin.granite.client.packman.ResponseProgressListener;
 
 /**
  */
-public final class GraniteClientConfig implements Serializable {
-    private final String baseUrl;
-    private final String username;
-    private final String password;
-    private final boolean signatureLogin;
-    private final long requestTimeout;
-    private final long serviceTimeout;
+public class JenkinsResponseProgressListener implements ResponseProgressListener {
 
-    public GraniteClientConfig(String baseUrl, String username, String password, boolean signatureLogin,
-                               long requestTimeout, long serviceTimeout) {
-        this.baseUrl = baseUrl;
-        this.username = username;
-        this.password = password;
-        this.signatureLogin = signatureLogin;
-        this.requestTimeout = requestTimeout;
-        this.serviceTimeout = serviceTimeout;
+    final TaskListener listener;
+
+    public JenkinsResponseProgressListener(TaskListener listener) {
+        this.listener = listener;
     }
 
-    public String getBaseUrl() {
-        return baseUrl;
+    public void onStart(String title) {
+        listener.getLogger().printf("%s%n", title);
     }
 
-    public String getUsername() {
-        return username;
+    public void onLog(String message) {
+        listener.getLogger().printf("%s%n", message);
     }
 
-    public String getPassword() {
-        return password;
+    public void onMessage(String message) {
+        listener.getLogger().printf("M %s%n", message);
     }
 
-    public boolean isSignatureLogin() {
-        return signatureLogin;
+    public void onProgress(String action, String path) {
+        listener.getLogger().printf("%s %s%n", action, path);
     }
 
-    public long getRequestTimeout() {
-        return requestTimeout;
+    public void onError(String path, String error) {
+        listener.error("E %s (%s)", path, error);
     }
 
-    public long getServiceTimeout() {
-        return serviceTimeout;
-    }
 }

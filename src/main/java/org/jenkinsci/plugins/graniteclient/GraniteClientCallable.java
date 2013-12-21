@@ -25,21 +25,13 @@
  * For more information, please refer to <http://unlicense.org/>
  */
 
-package net.adamcin.jenkins.granite;
+package org.jenkinsci.plugins.graniteclient;
 
-import hudson.FilePath;
-import hudson.model.TaskListener;
+import net.adamcin.granite.client.packman.PackageManagerClient;
 
 /**
  */
-public abstract class AbstractClientFileCallable<T> implements FilePath.FileCallable<T> {
+public interface GraniteClientCallable<T> {
 
-    protected final GraniteClientConfig clientConfig;
-    protected final TaskListener listener;
-
-    protected AbstractClientFileCallable(GraniteClientConfig clientConfig, TaskListener listener) {
-        this.clientConfig = clientConfig;
-        this.listener = listener;
-    }
-
+    T doExecute(PackageManagerClient client) throws Exception;
 }

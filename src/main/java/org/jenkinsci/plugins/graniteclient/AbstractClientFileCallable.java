@@ -25,15 +25,21 @@
  * For more information, please refer to <http://unlicense.org/>
  */
 
-package net.adamcin.jenkins.granite;
+package org.jenkinsci.plugins.graniteclient;
+
+import hudson.FilePath;
+import hudson.model.TaskListener;
 
 /**
- * Created with IntelliJ IDEA.
- * User: madamcin
- * Date: 6/20/13
- * Time: 1:57 PM
- * To change this template use File | Settings | File Templates.
  */
-public enum ExistingPackageBehavior {
-    UNINSTALL, DELETE, OVERWRITE, SKIP, IGNORE
+public abstract class AbstractClientFileCallable<T> implements FilePath.FileCallable<T> {
+
+    protected final GraniteClientConfig clientConfig;
+    protected final TaskListener listener;
+
+    protected AbstractClientFileCallable(GraniteClientConfig clientConfig, TaskListener listener) {
+        this.clientConfig = clientConfig;
+        this.listener = listener;
+    }
+
 }

@@ -25,13 +25,12 @@
  * For more information, please refer to <http://unlicense.org/>
  */
 
-package net.adamcin.jenkins.granite;
+package org.jenkinsci.plugins.graniteclient;
 
-import net.adamcin.granite.client.packman.PackageManagerClient;
+import com.ning.http.client.AsyncHttpClient;
 
-/**
- */
-public interface GraniteClientCallable<T> {
+import java.io.Serializable;
 
-    T doExecute(PackageManagerClient client) throws Exception;
+public interface AHCFactory extends Serializable {
+    AsyncHttpClient newInstance();
 }

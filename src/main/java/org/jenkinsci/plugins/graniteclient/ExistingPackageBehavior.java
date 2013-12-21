@@ -25,17 +25,15 @@
  * For more information, please refer to <http://unlicense.org/>
  */
 
-package net.adamcin.jenkins.granite;
-
-import hudson.model.StringParameterValue;
-import org.kohsuke.stapler.DataBoundConstructor;
+package org.jenkinsci.plugins.graniteclient;
 
 /**
+ * Created with IntelliJ IDEA.
+ * User: madamcin
+ * Date: 6/20/13
+ * Time: 1:57 PM
+ * To change this template use File | Settings | File Templates.
  */
-public class PackageChoiceParameterValue extends StringParameterValue {
-
-    @DataBoundConstructor
-    public PackageChoiceParameterValue(String name, String value) {
-        super(name, value);
-    }
+public enum ExistingPackageBehavior {
+    UNINSTALL, DELETE, OVERWRITE, SKIP, IGNORE
 }

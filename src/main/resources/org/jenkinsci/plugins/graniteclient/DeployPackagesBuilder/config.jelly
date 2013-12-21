@@ -37,7 +37,7 @@
     </f:entry>
 
     <f:entry title="Package ID" field="packageIdFilters">
-        <f:expandableTextbox default="*"/>
+        <f:expandableTextbox/>
     </f:entry>
 
     <f:entry title="Local Directory" field="localDirectory">
@@ -63,7 +63,7 @@
         </f:entry>
 
         <f:entry title="Password" field="password">
-            <f:password default="admin"/>
+            <f:password />
         </f:entry>
 
         <f:entry title="HTTP Signature Login" field="signatureLogin">
