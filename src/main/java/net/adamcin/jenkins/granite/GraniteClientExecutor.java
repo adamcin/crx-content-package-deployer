@@ -41,7 +41,7 @@ import net.adamcin.httpsig.api.KeyIdentifier;
 import net.adamcin.httpsig.api.Signer;
 import net.adamcin.httpsig.bouncycastle.PEMHelper;
 import net.adamcin.httpsig.helpers.async.AsyncUtil;
-import net.adamcin.sling.auth.httpsig.UserKeyIdentifier;
+import net.adamcin.httpsig.jce.UserFingerprintKeyId;
 
 import java.io.IOException;
 import java.util.List;
@@ -107,7 +107,7 @@ public final class GraniteClientExecutor {
             }
         }
 
-        KeyIdentifier keyIdentifier = new UserKeyIdentifier(username);
+        KeyIdentifier keyIdentifier = new UserFingerprintKeyId(username);
         Signer signer = new Signer(keychain, keyIdentifier);
         Future<Boolean> fResponse = AsyncUtil.login(
                 client.getClient(), signer, client.getClient().prepareGet(client.getJsonUrl()).build(),
