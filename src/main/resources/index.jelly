@@ -29,5 +29,6 @@
   This view is used to render the installed plugins page.
 -->
 <div>
-  Provides build steps and other magic to support Adobe Granite applications.
+  Provides build steps and other magic to support package deployment and configuration
+    management for Adobe Granite applications (CQ5.4+, AEM 5.6.1+, CRX 2.1+).
 </div>

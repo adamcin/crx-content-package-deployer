@@ -39,6 +39,7 @@ import java.io.IOException;
 import java.util.List;
 
 /**
+ * Implementation of {@link hudson.FilePath.FileCallable} used by the {@link DownloadPackagesBuilder}
  */
 public class PackageDownloadCallable extends AbstractClientFileCallable<Result> {
 
@@ -52,7 +53,7 @@ public class PackageDownloadCallable extends AbstractClientFileCallable<Result> 
         this.ignoreErrors = ignoreErrors;
     }
 
-    private class Execution implements GraniteClientCallable<Result> {
+    private class Execution implements PackageManagerClientCallable<Result> {
         final File toDirectory;
 
         private Execution(File toDirectory) {

@@ -32,11 +32,7 @@ import net.adamcin.granite.client.packman.ACHandling;
 import java.io.Serializable;
 
 /**
- * Created with IntelliJ IDEA.
- * User: madamcin
- * Date: 6/20/13
- * Time: 1:57 PM
- * To change this template use File | Settings | File Templates.
+ * Pojo for capturing the group of ancillary options for package installation
  */
 public class PackageInstallOptions implements Serializable {
 

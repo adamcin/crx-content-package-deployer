@@ -30,8 +30,9 @@ package org.jenkinsci.plugins.graniteclient;
 import net.adamcin.granite.client.packman.PackageManagerClient;
 
 /**
+ * Callback which accepts a {@link PackageManagerClient}
  */
-public interface GraniteClientCallable<T> {
+public interface PackageManagerClientCallable<T> {
 
     T doExecute(PackageManagerClient client) throws Exception;
 }

@@ -31,6 +31,7 @@ import hudson.model.StringParameterValue;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 /**
+ * Simple name-value pair parameter for capturing package IDs
  */
 public class PackageChoiceParameterValue extends StringParameterValue {
 

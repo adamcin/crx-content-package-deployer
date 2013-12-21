@@ -51,22 +51,19 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Created with IntelliJ IDEA.
- * User: madamcin
- * Date: 12/20/13
- * Time: 2:05 PM
- * To change this template use File | Settings | File Templates.
+ * Executes {@link PackageManagerClientCallable} instances by injecting an {@link AsyncPackageManagerClient}
+ * as the implementation for {@link net.adamcin.granite.client.packman.PackageManagerClient}
  */
 public final class GraniteClientExecutor {
 
     private static final Logger LOGGER = Logger.getLogger(GraniteAHCFactory.class.getName());
     private static final TaskListener DEFAULT_LISTENER = new LogTaskListener(LOGGER, Level.INFO);
 
-    public static <T> T execute(GraniteClientCallable<T> callable, GraniteClientConfig config) throws Exception {
+    public static <T> T execute(PackageManagerClientCallable<T> callable, GraniteClientConfig config) throws Exception {
         return execute(callable, config, null);
     }
 
-    public static <T> T execute(GraniteClientCallable<T> callable, GraniteClientConfig config, TaskListener _listener) throws Exception {
+    public static <T> T execute(PackageManagerClientCallable<T> callable, GraniteClientConfig config, TaskListener _listener) throws Exception {
         final TaskListener listener = _listener != null ? _listener : DEFAULT_LISTENER;
         GraniteAHCFactory ahcFactory = GraniteAHCFactory.getFactoryInstance();
 

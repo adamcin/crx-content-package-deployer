@@ -31,7 +31,10 @@ import hudson.FilePath;
 import hudson.model.TaskListener;
 
 /**
+ * Simple abstract class which can probably be eliminated since it doesn't provide much benefit
+ * TODO remove
  */
+@Deprecated
 public abstract class AbstractClientFileCallable<T> implements FilePath.FileCallable<T> {
 
     protected final GraniteClientConfig clientConfig;

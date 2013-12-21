@@ -62,6 +62,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * Implementation of the "[Granite] Deploy Packages" build step
+ */
 public class DeployPackagesBuilder extends Builder {
 
     private String packageIdFilters;

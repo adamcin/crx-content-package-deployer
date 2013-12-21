@@ -30,6 +30,10 @@ package org.jenkinsci.plugins.graniteclient;
 import net.adamcin.granite.client.packman.PackId;
 import net.adamcin.granite.client.packman.PackIdFilter;
 
+/**
+ * Default implementation of {@link PackIdFilter} which parses a standard filter string
+ * format, matching "*:*:*", for "group:name:version"
+ */
 public final class DefaultPackIdFilter implements PackIdFilter {
     public static final DefaultPackIdFilter INCLUDE_ALL_FILTER = new DefaultPackIdFilter(null, null, null);
 

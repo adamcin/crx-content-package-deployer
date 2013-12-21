@@ -31,6 +31,7 @@ import hudson.model.TaskListener;
 import net.adamcin.granite.client.packman.ResponseProgressListener;
 
 /**
+ * Wraps a {@link TaskListener} in a {@link ResponseProgressListener} interface
  */
 public class JenkinsResponseProgressListener implements ResponseProgressListener {
 

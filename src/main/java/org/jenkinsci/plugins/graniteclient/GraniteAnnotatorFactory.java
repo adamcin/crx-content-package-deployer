@@ -35,6 +35,11 @@ import org.jvnet.hudson.plugins.collapsingconsolesections.CollapsingSectionAnnot
 import org.jvnet.hudson.plugins.collapsingconsolesections.CollapsingSectionNote;
 import org.jvnet.hudson.plugins.collapsingconsolesections.CollapsingSectionsConfiguration;
 
+/**
+ * Nice-to-have service which provides collapsible sections around
+ * {@link JenkinsResponseProgressListener} output if the Collapsible Sections Plugin
+ * is installed
+ */
 @Extension(optional = true)
 public class GraniteAnnotatorFactory extends ConsoleAnnotatorFactory<Class<Run>> {
 

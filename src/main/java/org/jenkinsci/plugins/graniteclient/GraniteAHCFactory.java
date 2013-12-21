@@ -39,10 +39,10 @@ import net.sf.json.JSONObject;
 import org.kohsuke.stapler.StaplerRequest;
 
 /**
+ * Global extension and configurable factory for {@link AsyncHttpClient} instances
  */
 @Extension
-public final class GraniteAHCFactory extends Descriptor<GraniteAHCFactory> implements AHCFactory,
-                                                                                Describable<GraniteAHCFactory> {
+public final class GraniteAHCFactory extends Descriptor<GraniteAHCFactory> implements Describable<GraniteAHCFactory> {
 
 
     private static final AsyncHttpClientConfig DEFAULT_CONFIG = new AsyncHttpClientConfig.Builder().build();

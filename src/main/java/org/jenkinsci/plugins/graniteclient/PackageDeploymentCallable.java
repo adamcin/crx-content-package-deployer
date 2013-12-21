@@ -40,6 +40,9 @@ import net.adamcin.granite.client.packman.SimpleResponse;
 import java.io.File;
 import java.io.IOException;
 
+/**
+ * Implementation of {@link hudson.FilePath.FileCallable} used by the {@link DeployPackagesBuilder}
+ */
 public final class PackageDeploymentCallable extends AbstractClientFileCallable<Result> {
 
     private final PackId packId;
@@ -55,7 +58,7 @@ public final class PackageDeploymentCallable extends AbstractClientFileCallable<
         this.packId = packId;
     }
 
-    private class Execution implements GraniteClientCallable<Result> {
+    private class Execution implements PackageManagerClientCallable<Result> {
         private final File file;
 
         private Execution(File file) {

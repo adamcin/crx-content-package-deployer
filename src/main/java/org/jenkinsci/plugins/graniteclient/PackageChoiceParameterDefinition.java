@@ -47,11 +47,7 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
- * Created with IntelliJ IDEA.
- * User: madamcin
- * Date: 12/20/13
- * Time: 11:39 AM
- * To change this template use File | Settings | File Templates.
+ * Implementation of the "[Granite] Package Choice Parameter" type
  */
 public class PackageChoiceParameterDefinition extends ParameterDefinition {
 
@@ -110,7 +106,7 @@ public class PackageChoiceParameterDefinition extends ParameterDefinition {
         GraniteClientConfig config = getGraniteClientConfig();
 
         try {
-            ListResponse response = GraniteClientExecutor.execute(new GraniteClientCallable<ListResponse>() {
+            ListResponse response = GraniteClientExecutor.execute(new PackageManagerClientCallable<ListResponse>() {
                 public ListResponse doExecute(PackageManagerClient client) throws Exception {
                     return client.list(query);
                 }

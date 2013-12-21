@@ -30,6 +30,7 @@ package org.jenkinsci.plugins.graniteclient;
 import java.io.Serializable;
 
 /**
+ * Pojo for capturing the group of configuration values for a single Granite Client connection
  */
 public final class GraniteClientConfig implements Serializable {
     private final String baseUrl;

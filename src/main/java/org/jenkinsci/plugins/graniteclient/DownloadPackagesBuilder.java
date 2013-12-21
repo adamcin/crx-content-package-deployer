@@ -47,7 +47,7 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- *
+ * Implementation of the "[Granite] Download Packages" build step
  */
 public class DownloadPackagesBuilder extends Builder {
     private String packageIds;
