@@ -1,5 +1,5 @@
-crx-content-package-deployer
-============================
+CRX Content Package Deployer Plugin (crx-content-package-deployer)
+==================================================================
 
 Deploys content packages to Adobe Granite applications, like Adobe CQ 5.4, CQ 5.5, and AEM 5.6
 
