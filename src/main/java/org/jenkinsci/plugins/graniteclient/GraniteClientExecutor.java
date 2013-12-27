@@ -37,11 +37,11 @@ import hudson.util.LogTaskListener;
 import net.adamcin.granite.client.packman.async.AsyncPackageManagerClient;
 import net.adamcin.httpsig.api.DefaultKeychain;
 import net.adamcin.httpsig.api.Key;
-import net.adamcin.httpsig.api.KeyIdentifier;
+import net.adamcin.httpsig.api.KeyId;
 import net.adamcin.httpsig.api.Signer;
-import net.adamcin.httpsig.bouncycastle.PEMHelper;
-import net.adamcin.httpsig.helpers.async.AsyncUtil;
-import net.adamcin.httpsig.jce.UserFingerprintKeyId;
+import net.adamcin.httpsig.http.ning.AsyncUtil;
+import net.adamcin.httpsig.ssh.bc.PEMUtil;
+import net.adamcin.httpsig.ssh.jce.UserFingerprintKeyId;
 
 import java.io.IOException;
 import java.util.List;
@@ -98,16 +98,16 @@ public final class GraniteClientExecutor {
                 passphrase = key.getPassphrase().getEncryptedValue().toCharArray();
             }
 
-            Key sshkey = PEMHelper.readKey(key.getPrivateKey().getBytes("UTF-8"), passphrase);
+            Key sshkey = PEMUtil.readKey(key.getPrivateKey().getBytes("UTF-8"), passphrase);
             if (sshkey != null) {
                 keychain.add(sshkey);
             }
         }
 
-        KeyIdentifier keyIdentifier = new UserFingerprintKeyId(username);
+        KeyId keyIdentifier = new UserFingerprintKeyId(username);
         Signer signer = new Signer(keychain, keyIdentifier);
         Future<Boolean> fResponse = AsyncUtil.login(
-                client.getClient(), signer, client.getClient().prepareGet(client.getJsonUrl()).build(),
+                client.getClient(), signer, client.getClient().prepareGet(client.getLoginUrl()).build(),
                 new AsyncCompletionHandler<Boolean>() {
                     @Override
                     public Boolean onCompleted(Response response) throws Exception {

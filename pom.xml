@@ -86,28 +86,29 @@
           tends to lag behind a bit
         -->
         <maven-hpi-plugin.version>1.95</maven-hpi-plugin.version>
+        <httpsig.version>1.0.0</httpsig.version>
     </properties>
 
     <dependencies>
         <dependency>
             <groupId>net.adamcin.granite.client</groupId>
             <artifactId>net.adamcin.granite.client.packman</artifactId>
-            <version>0.6.0</version>
+            <version>0.7.0-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>net.adamcin.httpsig</groupId>
             <artifactId>httpsig-api</artifactId>
-            <version>0.6.0</version>
+            <version>${httpsig.version}</version>
         </dependency>
         <dependency>
             <groupId>net.adamcin.httpsig</groupId>
-            <artifactId>httpsig-helpers</artifactId>
-            <version>0.6.0</version>
+            <artifactId>httpsig-http-helpers</artifactId>
+            <version>${httpsig.version}</version>
         </dependency>
         <dependency>
             <groupId>net.adamcin.httpsig</groupId>
-            <artifactId>httpsig-bouncycastle</artifactId>
-            <version>0.6.0</version>
+            <artifactId>httpsig-ssh-bc</artifactId>
+            <version>${httpsig.version}</version>
         </dependency>
 
         <dependency>
