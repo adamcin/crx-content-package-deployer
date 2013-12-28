@@ -468,7 +468,7 @@ public class DeployPackagesBuilder extends Builder {
 
         @Override
         public String getDisplayName() {
-            return "[Granite] Deploy Packages";
+            return "Deploy Content Packages to CRX";
         }
 
         @Override

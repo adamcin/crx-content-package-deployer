@@ -256,7 +256,7 @@ public class DownloadPackagesBuilder extends Builder {
 
         @Override
         public String getDisplayName() {
-            return "[Granite] Download Packages";
+            return "Download Content Packages from CRX";
         }
     }
 

@@ -29,10 +29,15 @@ package org.jenkinsci.plugins.graniteclient;
 
 import com.cloudbees.jenkins.plugins.sshcredentials.SSHUserPrivateKey;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
+import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
+import com.cloudbees.plugins.credentials.domains.DomainRequirement;
+import com.cloudbees.plugins.credentials.domains.URIRequirementBuilder;
 import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.Response;
+import hudson.model.Item;
 import hudson.model.TaskListener;
+import hudson.security.ACL;
 import hudson.util.LogTaskListener;
 import net.adamcin.granite.client.packman.async.AsyncPackageManagerClient;
 import net.adamcin.httpsig.api.DefaultKeychain;
@@ -41,10 +46,17 @@ import net.adamcin.httpsig.api.KeyId;
 import net.adamcin.httpsig.api.Signer;
 import net.adamcin.httpsig.http.ning.AsyncUtil;
 import net.adamcin.httpsig.ssh.bc.PEMUtil;
+import net.adamcin.httpsig.ssh.jce.FingerprintableKey;
 import net.adamcin.httpsig.ssh.jce.UserFingerprintKeyId;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -76,10 +88,8 @@ public final class GraniteClientExecutor {
         client.setServiceTimeout(config.getServiceTimeout());
 
         try {
-            if (config.isSignatureLogin()) {
-                if (!doSignatureLogin(client, config.getUsername(), listener)) {
-                    listener.fatalError("Failed to login to %s", config.getBaseUrl());
-                }
+            if (!doLogin(client, null, config, listener)) {
+                listener.fatalError("Failed to login to %s", config.getBaseUrl());
             }
             return callable.doExecute(client);
         } finally {
@@ -87,10 +97,16 @@ public final class GraniteClientExecutor {
         }
     }
 
-    private static boolean doSignatureLogin(AsyncPackageManagerClient client, String username,
-                                            final TaskListener listener) throws IOException {
+    private static List<DomainRequirement> getDomainRequirements(String baseUrl) {
+        return URIRequirementBuilder.fromUri(baseUrl).build();
+    }
 
-        List<SSHUserPrivateKey> keys = CredentialsProvider.lookupCredentials(SSHUserPrivateKey.class);
+    private static boolean doLogin(AsyncPackageManagerClient client, Item item, GraniteClientConfig config,
+                                   final TaskListener listener) throws IOException {
+
+        List<DomainRequirement> reqs = URIRequirementBuilder.fromUri(config.getBaseUrl()).build();
+        List<SSHUserPrivateKey> keys = CredentialsProvider.lookupCredentials(SSHUserPrivateKey.class, item, ACL.SYSTEM, reqs);
+        Map<Key, String> usernames = new HashMap<Key, String>();
         DefaultKeychain keychain = new DefaultKeychain();
         for (SSHUserPrivateKey key : keys) {
             char[] passphrase = null;
@@ -100,12 +116,13 @@ public final class GraniteClientExecutor {
 
             Key sshkey = PEMUtil.readKey(key.getPrivateKey().getBytes("UTF-8"), passphrase);
             if (sshkey != null) {
+                usernames.put(sshkey, key.getUsername());
                 keychain.add(sshkey);
             }
         }
 
-        KeyId keyIdentifier = new UserFingerprintKeyId(username);
-        Signer signer = new Signer(keychain, keyIdentifier);
+        KeyId keyId = new SshCredentialsKeyId(usernames);
+        Signer signer = new Signer(keychain, keyId);
         Future<Boolean> fResponse = AsyncUtil.login(
                 client.getClient(), signer, client.getClient().prepareGet(client.getLoginUrl()).build(),
                 new AsyncCompletionHandler<Boolean>() {
@@ -127,6 +144,31 @@ public final class GraniteClientExecutor {
         } catch (Exception e) {
             throw new IOException("Failed to login using HTTP Signature.", e);
         }
+
+        if (!loginResult) {
+            List<StandardUsernamePasswordCredentials> basicCredsList =
+                    CredentialsProvider.lookupCredentials(StandardUsernamePasswordCredentials.class, item, ACL.SYSTEM,
+                                                          reqs);
+        }
         return loginResult;
+    }
+
+    private static class SshCredentialsKeyId implements KeyId {
+
+        private final Map<Key, String> usernames;
+
+        private SshCredentialsKeyId(Map<Key, String> usernames) {
+            this.usernames = Collections.synchronizedMap(usernames);
+        }
+
+        public String getId(Key key) {
+            if (key instanceof FingerprintableKey) {
+                String username = usernames.get(key);
+                if (username != null && !username.isEmpty()) {
+                    return String.format("/%s/%s", username, ((FingerprintableKey) key).getFingerprint());
+                }
+            }
+            return null;
+        }
     }
 }

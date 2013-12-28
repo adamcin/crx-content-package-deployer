@@ -46,11 +46,11 @@ public class GraniteAnnotatorFactory extends ConsoleAnnotatorFactory<Class<Run>>
     @Override
     public ConsoleAnnotator newInstance(Class<Run> context) {
         CollapsingSectionNote uninstallSection = new CollapsingSectionNote(
-                "[Granite] Uninstalling package",
+                "Uninstalling content package",
                 "Uninstalling content",
                 "Package uninstalled", false);
         CollapsingSectionNote installSection = new CollapsingSectionNote(
-                "[Granite] Installing package",
+                "Installing content package",
                 "Installing content",
                 "Package uploaded", false);
         return new CollapsingSectionAnnotator(
