@@ -27,6 +27,7 @@
 
 package org.jenkinsci.plugins.graniteclient;
 
+import com.cloudbees.plugins.credentials.common.AbstractIdCredentialsListBoxModel;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
@@ -63,15 +64,13 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Implementation of the "[Granite] Deploy Packages" build step
+ * Implementation of the "Deploy Content Packages to CRX" build step
  */
 public class DeployPackagesBuilder extends Builder {
 
     private String packageIdFilters;
     private String baseUrls;
-    private String username;
-    private String password;
-    private boolean signatureLogin;
+    private String credentialsId;
     private String localDirectory;
     private String behavior;
     private boolean recursive;
@@ -82,15 +81,13 @@ public class DeployPackagesBuilder extends Builder {
     private long serviceTimeout;
 
     @DataBoundConstructor
-    public DeployPackagesBuilder(String packageIdFilters, String baseUrls, String username, String password,
-                                 boolean signatureLogin, String localDirectory, String behavior, boolean recursive,
+    public DeployPackagesBuilder(String packageIdFilters, String baseUrls, String credentialsId,
+                                 String localDirectory, String behavior, boolean recursive,
                                  int autosave, String acHandling, boolean disableForJobTesting, long requestTimeout,
                                  long serviceTimeout) {
         this.packageIdFilters = packageIdFilters;
         this.baseUrls = baseUrls;
-        this.username = username;
-        this.password = password;
-        this.signatureLogin = signatureLogin;
+        this.credentialsId = credentialsId;
         this.localDirectory = localDirectory;
         this.behavior = behavior;
         this.recursive = recursive;
@@ -127,28 +124,12 @@ public class DeployPackagesBuilder extends Builder {
         this.baseUrls = baseUrls;
     }
 
-    public String getUsername() {
-        return username;
+    public String getCredentialsId() {
+        return credentialsId;
     }
 
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
-    public boolean isSignatureLogin() {
-        return signatureLogin;
-    }
-
-    public void setSignatureLogin(boolean signatureLogin) {
-        this.signatureLogin = signatureLogin;
+    public void setCredentialsId(String credentialsId) {
+        this.credentialsId = credentialsId;
     }
 
     public String getLocalDirectory() {
@@ -263,9 +244,6 @@ public class DeployPackagesBuilder extends Builder {
             listener.getLogger().println("DEBUG: *** package deployment disabled for testing ***");
         }
 
-        final String fUsername = getUsername(build, listener);
-        final String fPassword = getPassword(build, listener);
-
         for (String baseUrl : listBaseUrls(build, listener)) {
             if (result.isBetterOrEqualTo(Result.UNSTABLE)) {
                 listener.getLogger().printf("Deploying packages to %s%n", baseUrl);
@@ -278,14 +256,7 @@ public class DeployPackagesBuilder extends Builder {
                         callable = new DebugPackageCallable(selectedPackage.getKey(), listener);
                     } else {
                         GraniteClientConfig clientConfig =
-                                new GraniteClientConfig(
-                                        baseUrl,
-                                        fUsername,
-                                        fPassword,
-                                        isSignatureLogin(),
-                                        requestTimeout > 0L ? requestTimeout : -1L,
-                                        serviceTimeout > 0L ? serviceTimeout : -1L
-                                );
+                                new GraniteClientConfig(baseUrl, credentialsId, requestTimeout, serviceTimeout);
 
                         callable = new PackageDeploymentCallable(
                                 clientConfig, listener,
@@ -422,24 +393,6 @@ public class DeployPackagesBuilder extends Builder {
         return Collections.unmodifiableList(_baseUrls);
     }
 
-    private String getUsername(AbstractBuild<?, ?> build, TaskListener listener) {
-        try {
-            return TokenMacro.expandAll(build, listener, getUsername());
-        } catch (Exception e) {
-            listener.error("failed to expand tokens in: %s%n", getUsername());
-        }
-        return getUsername();
-    }
-
-    private String getPassword(AbstractBuild<?, ?> build, TaskListener listener) {
-        try {
-            return TokenMacro.expandAll(build, listener, getPassword());
-        } catch (Exception e) {
-            listener.error("failed to expand tokens in password %n", getPassword());
-        }
-        return getPassword();
-    }
-
     private String getLocalDirectory(AbstractBuild<?, ?> build, TaskListener listener) {
         try {
             return TokenMacro.expandAll(build, listener, getLocalDirectory());
@@ -478,9 +431,27 @@ public class DeployPackagesBuilder extends Builder {
             return true;
         }
 
-        public FormValidation doCheckBaseUrls(@QueryParameter String baseUrls) {
-            for (String baseUrl : parseBaseUrls(baseUrls)) {
+        public AbstractIdCredentialsListBoxModel doFillCredentialsIdItems(@QueryParameter String baseUrls) {
+            List<String> _baseUrls = parseBaseUrls(baseUrls);
 
+            if (_baseUrls != null && !_baseUrls.isEmpty()) {
+                return GraniteCredentialsListBoxModel.fillItems(_baseUrls.iterator().next());
+            } else {
+                return GraniteCredentialsListBoxModel.fillItems();
+            }
+        }
+
+        public FormValidation doCheckBaseUrls(@QueryParameter String value, @QueryParameter String credentialsId,
+                                              @QueryParameter long requestTimeout, @QueryParameter long serviceTimeout) {
+            for (String baseUrl : parseBaseUrls(value)) {
+                try {
+                    if (!GraniteClientExecutor.checkLogin(
+                            new GraniteClientConfig(baseUrl, credentialsId, requestTimeout, serviceTimeout))) {
+                        return FormValidation.error("Failed to login to " + baseUrl);
+                    }
+                } catch (IOException e) {
+                    return FormValidation.error(e.getCause(), e.getMessage());
+                }
             }
             return FormValidation.ok();
         }

@@ -27,6 +27,7 @@
 
 package org.jenkinsci.plugins.graniteclient;
 
+import com.cloudbees.plugins.credentials.common.AbstractIdCredentialsListBoxModel;
 import hudson.Extension;
 import hudson.Launcher;
 import hudson.model.AbstractBuild;
@@ -36,10 +37,12 @@ import hudson.model.Result;
 import hudson.model.TaskListener;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
+import hudson.util.FormValidation;
 import net.adamcin.granite.client.packman.PackId;
 import org.jenkinsci.plugins.tokenmacro.MacroEvaluationException;
 import org.jenkinsci.plugins.tokenmacro.TokenMacro;
 import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.QueryParameter;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -47,33 +50,28 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Implementation of the "[Granite] Download Packages" build step
+ * Implementation of the "Download Content Packages from CRX" build step
  */
 public class DownloadPackagesBuilder extends Builder {
     private String packageIds;
     private String baseUrl;
-    private String username;
-    private String password;
-    private boolean signatureLogin;
-    private String localDirectory;
-    private boolean ignoreErrors;
+    private String credentialsId;
     private long requestTimeout;
     private long serviceTimeout;
+    private String localDirectory;
+    private boolean ignoreErrors;
 
     @DataBoundConstructor
-    public DownloadPackagesBuilder(String packageIds, String baseUrl, String username, String password,
-                                   boolean signatureLogin, String localDirectory, boolean ignoreErrors,
-                                   long requestTimeout,
-                                   long serviceTimeout) {
+    public DownloadPackagesBuilder(String packageIds, String baseUrl, String credentialsId,
+                                   long requestTimeout, long serviceTimeout,
+                                   String localDirectory, boolean ignoreErrors) {
         this.packageIds = packageIds;
         this.baseUrl = baseUrl;
-        this.username = username;
-        this.password = password;
-        this.signatureLogin = signatureLogin;
-        this.localDirectory = localDirectory;
-        this.ignoreErrors = ignoreErrors;
+        this.credentialsId = credentialsId;
         this.requestTimeout = requestTimeout;
         this.serviceTimeout = serviceTimeout;
+        this.localDirectory = localDirectory;
+        this.ignoreErrors = ignoreErrors;
     }
 
     @Override
@@ -86,13 +84,7 @@ public class DownloadPackagesBuilder extends Builder {
         }
 
         GraniteClientConfig clientConfig = new GraniteClientConfig(
-                getBaseUrl(build, listener),
-                getUsername(build, listener),
-                getPassword(build, listener),
-                isSignatureLogin(),
-                requestTimeout > 0L ? requestTimeout : -1L,
-                serviceTimeout > 0L ? serviceTimeout : -1L
-        );
+                getBaseUrl(build, listener), credentialsId, requestTimeout, serviceTimeout);
 
         PackageDownloadCallable callable = new PackageDownloadCallable(clientConfig, listener,
                                                                        listPackIds(build, listener),
@@ -130,22 +122,12 @@ public class DownloadPackagesBuilder extends Builder {
         return getBaseUrl();
     }
 
-    private String getUsername(AbstractBuild<?, ?> build, TaskListener listener) {
-        try {
-            return TokenMacro.expandAll(build, listener, getUsername());
-        } catch (Exception e) {
-            listener.error("failed to expand tokens in: %s%n", getUsername());
-        }
-        return getUsername();
+    public String getCredentialsId() {
+        return credentialsId;
     }
 
-    private String getPassword(AbstractBuild<?, ?> build, TaskListener listener) {
-        try {
-            return TokenMacro.expandAll(build, listener, getPassword());
-        } catch (Exception e) {
-            listener.error("failed to expand tokens in password.%n", getPassword());
-        }
-        return getPassword();
+    public void setCredentialsId(String credentialsId) {
+        this.credentialsId = credentialsId;
     }
 
     private String getLocalDirectory(AbstractBuild<?, ?> build, TaskListener listener) {
@@ -176,18 +158,6 @@ public class DownloadPackagesBuilder extends Builder {
         } else {
             return "";
         }
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public boolean isSignatureLogin() {
-        return signatureLogin;
     }
 
     public long getRequestTimeout() {
@@ -222,18 +192,6 @@ public class DownloadPackagesBuilder extends Builder {
         this.baseUrl = baseUrl;
     }
 
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
-    public void setSignatureLogin(boolean signatureLogin) {
-        this.signatureLogin = signatureLogin;
-    }
-
     public void setIgnoreErrors(boolean ignoreErrors) {
         this.ignoreErrors = ignoreErrors;
     }
@@ -252,6 +210,23 @@ public class DownloadPackagesBuilder extends Builder {
         @Override
         public boolean isApplicable(Class<? extends AbstractProject> aClass) {
             return true;
+        }
+
+        public AbstractIdCredentialsListBoxModel doFillCredentialsIdItems(@QueryParameter String baseUrl) {
+            return GraniteCredentialsListBoxModel.fillItems(baseUrl);
+        }
+
+        public FormValidation doCheckBaseUrl(@QueryParameter String value, @QueryParameter String credentialsId,
+                                             @QueryParameter long requestTimeout, @QueryParameter long serviceTimeout) {
+            try {
+                if (!GraniteClientExecutor.checkLogin(
+                        new GraniteClientConfig(value, credentialsId, requestTimeout, serviceTimeout))) {
+                    return FormValidation.error("Failed to login to " + value);
+                }
+                return FormValidation.ok();
+            } catch (IOException e) {
+                return FormValidation.error(e.getCause(), e.getMessage());
+            }
         }
 
         @Override

@@ -27,6 +27,8 @@
 
 package org.jenkinsci.plugins.graniteclient;
 
+import com.cloudbees.plugins.credentials.Credentials;
+import com.cloudbees.plugins.credentials.common.AbstractIdCredentialsListBoxModel;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.Realm;
@@ -44,9 +46,9 @@ import org.kohsuke.stapler.StaplerRequest;
 @Extension
 public final class GraniteAHCFactory extends Descriptor<GraniteAHCFactory> implements Describable<GraniteAHCFactory> {
 
-
     private static final AsyncHttpClientConfig DEFAULT_CONFIG = new AsyncHttpClientConfig.Builder().build();
 
+    private String credentialsId;
     private int connectionTimeoutInMs = DEFAULT_CONFIG.getConnectionTimeoutInMs();
     private int idleConnectionTimeoutInMs = DEFAULT_CONFIG.getIdleConnectionTimeoutInMs();
     private int requestTimeoutInMs = DEFAULT_CONFIG.getRequestTimeoutInMs();
@@ -66,6 +68,14 @@ public final class GraniteAHCFactory extends Descriptor<GraniteAHCFactory> imple
         req.bindJSON(this, json.getJSONObject("GraniteAHCFactory"));
         save();
         return true;
+    }
+
+    public String getCredentialsId() {
+        return credentialsId;
+    }
+
+    public void setCredentialsId(String credentialsId) {
+        this.credentialsId = credentialsId;
     }
 
     public int getConnectionTimeoutInMs() {
@@ -94,7 +104,19 @@ public final class GraniteAHCFactory extends Descriptor<GraniteAHCFactory> imple
 
     @Override
     public String getDisplayName() {
-        return "[Granite] Async HTTP Client Factory";
+        return "CRX Content Package Deployer - HTTP Client";
+    }
+
+    public AbstractIdCredentialsListBoxModel doFillCredentialsIdItems() {
+        return GraniteCredentialsListBoxModel.fillItems();
+    }
+
+    public Credentials getDefaultCredentials() {
+        if (this.credentialsId != null) {
+            return GraniteNamedIdCredentials.getCredentialsById(this.credentialsId);
+        } else {
+            return null;
+        }
     }
 
     public AsyncHttpClient newInstance() {
@@ -105,35 +127,6 @@ public final class GraniteAHCFactory extends Descriptor<GraniteAHCFactory> imple
                         .setIdleConnectionTimeoutInMs(this.idleConnectionTimeoutInMs)
                         .setRequestTimeoutInMs(this.requestTimeoutInMs)
                         .build());
-    }
-
-    public AsyncHttpClient newInstance(GraniteClientConfig config) {
-        AsyncHttpClientConfig.Builder builder = new AsyncHttpClientConfig.Builder()
-                        .setProxyServer(AHCUtils.getProxyServer())
-                        .setConnectionTimeoutInMs(this.connectionTimeoutInMs)
-                        .setIdleConnectionTimeoutInMs(this.idleConnectionTimeoutInMs)
-                        .setRequestTimeoutInMs(this.requestTimeoutInMs);
-
-        if (config != null) {
-            if (!config.isSignatureLogin()) {
-                String username = config.getUsername();
-                String password = config.getPassword();
-                if (username == null || username.isEmpty()) {
-                    username = "anonymous";
-                    if (password == null || password.isEmpty()) {
-                        password = "anonymous";
-                    }
-                }
-                Realm realm = new Realm.RealmBuilder()
-                        .setPrincipal(username)
-                        .setPassword(password)
-                        .setUsePreemptiveAuth(true)
-                        .setScheme(Realm.AuthScheme.BASIC)
-                        .build();
-                builder.setRealm(realm);
-            }
-        }
-        return new AsyncHttpClient(builder.build());
     }
 
     public static GraniteAHCFactory getFactoryInstance() {

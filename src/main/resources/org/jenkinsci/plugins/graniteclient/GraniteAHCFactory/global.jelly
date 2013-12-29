@@ -25,8 +25,12 @@
   ~ For more information, please refer to <http://unlicense.org/>
   -->
 
-<j:jelly xmlns:j="jelly:core" xmlns:f="/lib/form">
-    <f:section title="[Granite] Granite Async HTTP Client Factory" name="GraniteAHCFactory">
+<j:jelly xmlns:j="jelly:core" xmlns:f="/lib/form" xmlns:creds="/lib/credentials">
+    <f:section title="CRX Content Package Deployer - HTTP Factory" name="GraniteAHCFactory">
+
+        <f:entry title="Default Credentials" field="credentialsId">
+            <creds:select />
+        </f:entry>
 
         <f:entry title="Request Timeout in MS" field="requestTimeoutInMs">
             <f:textbox />

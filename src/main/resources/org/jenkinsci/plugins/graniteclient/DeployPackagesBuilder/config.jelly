@@ -25,15 +25,14 @@
   ~ For more information, please refer to <http://unlicense.org/>
   -->
 
-<j:jelly xmlns:j="jelly:core" xmlns:f="/lib/form">
-    <!--
-      This jelly script is used for per-project configuration.
-
-      See global.jelly for a general discussion about jelly script.
-    -->
+<j:jelly xmlns:j="jelly:core" xmlns:f="/lib/form" xmlns:creds="/lib/credentials">
 
     <f:entry title="Base URL" field="baseUrls">
         <f:expandableTextbox />
+    </f:entry>
+
+    <f:entry title="Credentials" field="credentialsId">
+        <creds:select />
     </f:entry>
 
     <f:entry title="Package ID" field="packageIdFilters">
@@ -48,30 +47,17 @@
         <f:select />
     </f:entry>
 
-    <f:entry title="Access Control Handling" field="acHandling">
-        <f:select />
-    </f:entry>
-
     <f:entry title="Disable for Job Testing" field="disableForJobTesting">
         <f:checkbox />
     </f:entry>
 
-
     <f:advanced>
-        <f:entry title="Username" field="username">
-            <f:textbox default="admin" />
-        </f:entry>
-
-        <f:entry title="Password" field="password">
-            <f:password />
-        </f:entry>
-
-        <f:entry title="HTTP Signature Login" field="signatureLogin">
-            <f:checkbox />
-        </f:entry>
-
         <f:entry title="Install sub-packages" field="recursive">
             <f:checkbox />
+        </f:entry>
+
+        <f:entry title="Access Control Handling" field="acHandling">
+            <f:select />
         </f:entry>
 
         <f:entry title="Auto Save" field="autosave">

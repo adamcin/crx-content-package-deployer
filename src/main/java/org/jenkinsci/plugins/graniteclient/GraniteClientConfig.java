@@ -27,43 +27,42 @@
 
 package org.jenkinsci.plugins.graniteclient;
 
+import com.cloudbees.jenkins.plugins.sshcredentials.SSHUserPrivateKey;
+import com.cloudbees.plugins.credentials.Credentials;
+
 import java.io.Serializable;
 
 /**
  * Pojo for capturing the group of configuration values for a single Granite Client connection
  */
 public final class GraniteClientConfig implements Serializable {
+
+    private static final long serialVersionUID = 5044980450351873759L;
+
     private final String baseUrl;
-    private final String username;
-    private final String password;
-    private final boolean signatureLogin;
+    private final String credentialsId;
     private final long requestTimeout;
     private final long serviceTimeout;
+    private final Credentials credentials;
 
-    public GraniteClientConfig(String baseUrl, String username, String password, boolean signatureLogin,
-                               long requestTimeout, long serviceTimeout) {
+    public GraniteClientConfig(String baseUrl, String credentialsId, long requestTimeout, long serviceTimeout) {
         this.baseUrl = baseUrl;
-        this.username = username;
-        this.password = password;
-        this.signatureLogin = signatureLogin;
-        this.requestTimeout = requestTimeout;
-        this.serviceTimeout = serviceTimeout;
+        this.credentialsId = credentialsId;
+        this.requestTimeout = requestTimeout > 0L ? requestTimeout : -1L;
+        this.serviceTimeout = serviceTimeout > 0L ? serviceTimeout : -1L;
+        this.credentials = GraniteNamedIdCredentials.getCredentialsById(credentialsId);
     }
 
     public String getBaseUrl() {
         return baseUrl;
     }
 
-    public String getUsername() {
-        return username;
-    }
-
-    public String getPassword() {
-        return password;
+    public String getCredentialsId() {
+        return credentialsId;
     }
 
     public boolean isSignatureLogin() {
-        return signatureLogin;
+        return credentials instanceof SSHUserPrivateKey;
     }
 
     public long getRequestTimeout() {
@@ -73,4 +72,9 @@ public final class GraniteClientConfig implements Serializable {
     public long getServiceTimeout() {
         return serviceTimeout;
     }
+
+    public Credentials getCredentials() {
+        return credentials;
+    }
+
 }

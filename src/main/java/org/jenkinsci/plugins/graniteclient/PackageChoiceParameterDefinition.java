@@ -27,9 +27,11 @@
 
 package org.jenkinsci.plugins.graniteclient;
 
+import com.cloudbees.plugins.credentials.common.AbstractIdCredentialsListBoxModel;
 import hudson.Extension;
 import hudson.model.ParameterDefinition;
 import hudson.model.ParameterValue;
+import hudson.util.FormValidation;
 import net.adamcin.granite.client.packman.ListResponse;
 import net.adamcin.granite.client.packman.ListResult;
 import net.adamcin.granite.client.packman.PackId;
@@ -39,15 +41,17 @@ import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
 /**
- * Implementation of the "[Granite] Package Choice Parameter" type
+ * Implementation of the "CRX Content Package Choice Parameter" type
  */
 public class PackageChoiceParameterDefinition extends ParameterDefinition {
 
@@ -56,7 +60,24 @@ public class PackageChoiceParameterDefinition extends ParameterDefinition {
 
         @Override
         public String getDisplayName() {
-            return "[Granite] Package Choice Parameter";
+            return "CRX Content Package Choice Parameter";
+        }
+
+        public FormValidation doCheckBaseUrl(@QueryParameter String value, @QueryParameter String credentialsId,
+                                             @QueryParameter long requestTimeout, @QueryParameter long serviceTimeout) {
+            try {
+                if (!GraniteClientExecutor.checkLogin(
+                        new GraniteClientConfig(value, credentialsId, requestTimeout, serviceTimeout))) {
+                    return FormValidation.error("Failed to login to " + value);
+                }
+                return FormValidation.ok();
+            } catch (IOException e) {
+                return FormValidation.error(e.getCause(), e.getMessage());
+            }
+        }
+
+        public AbstractIdCredentialsListBoxModel doFillCredentialsIdItems(@QueryParameter String baseUrl) {
+            return GraniteCredentialsListBoxModel.fillItems(baseUrl);
         }
     }
 
@@ -144,9 +165,7 @@ public class PackageChoiceParameterDefinition extends ParameterDefinition {
     }
 
     private String baseUrl;
-    private String username;
-    private String password;
-    private boolean signatureLogin;
+    private String credentialsId;
     private long requestTimeout;
     private long serviceTimeout;
 
@@ -158,16 +177,13 @@ public class PackageChoiceParameterDefinition extends ParameterDefinition {
     private String value;
 
     @DataBoundConstructor
-    public PackageChoiceParameterDefinition(String name, String description, String baseUrl, String username,
-                                            String password, boolean signatureLogin, long requestTimeout,
-                                            long serviceTimeout, boolean multiselect, boolean excludeNotInstalled,
-                                            boolean excludeModified, String query, String packageIdFilter,
-                                            String value) {
+    public PackageChoiceParameterDefinition(String name, String description, String baseUrl, String credentialsId,
+                                            long requestTimeout, long serviceTimeout, boolean multiselect,
+                                            boolean excludeNotInstalled, boolean excludeModified, String query,
+                                            String packageIdFilter, String value) {
         super(name, description);
         this.baseUrl = baseUrl;
-        this.username = username;
-        this.password = password;
-        this.signatureLogin = signatureLogin;
+        this.credentialsId = credentialsId;
         this.requestTimeout = requestTimeout;
         this.serviceTimeout = serviceTimeout;
         this.multiselect = multiselect;
@@ -186,28 +202,12 @@ public class PackageChoiceParameterDefinition extends ParameterDefinition {
         this.baseUrl = baseUrl;
     }
 
-    public String getUsername() {
-        return username;
+    public String getCredentialsId() {
+        return credentialsId;
     }
 
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
-    public boolean isSignatureLogin() {
-        return signatureLogin;
-    }
-
-    public void setSignatureLogin(boolean signatureLogin) {
-        this.signatureLogin = signatureLogin;
+    public void setCredentialsId(String credentialsId) {
+        this.credentialsId = credentialsId;
     }
 
     public long getRequestTimeout() {
@@ -287,11 +287,8 @@ public class PackageChoiceParameterDefinition extends ParameterDefinition {
     }
 
     private GraniteClientConfig getGraniteClientConfig() {
-        return new GraniteClientConfig(
-                getBaseUrl(), getUsername(), getPassword(), isSignatureLogin(),
-                requestTimeout > 0L ? requestTimeout : -1L,
-                serviceTimeout > 0L ? serviceTimeout : -1L
-        );
+        return new GraniteClientConfig(getBaseUrl(), getCredentialsId(), requestTimeout, serviceTimeout);
 
     }
+
 }
