@@ -63,7 +63,7 @@ public final class GraniteClientExecutor {
     private static final AsyncCompletionHandler<Boolean> LOGIN_HANDLER = new AsyncCompletionHandler<Boolean>() {
         @Override
         public Boolean onCompleted(Response response) throws Exception {
-            return response.getStatusCode() == 405;
+            return response.getStatusCode() == 405 || response.getStatusCode() == 200;
         }
     };
 
@@ -125,7 +125,7 @@ public final class GraniteClientExecutor {
         KeyId keyId = new UserKeysFingerprintKeyId(key.getUsername());
         Signer signer = new Signer(sshkey, keyId);
         Future<Boolean> fResponse = AsyncUtil.login(client.getClient(),
-                signer, client.getClient().prepareGet(client.getLoginUrl()).build(), LOGIN_HANDLER);
+                signer, client.getClient().prepareGet(client.getBaseUrl() + "?sling:authRequestLogin=Signature&j_validate=true").build(), LOGIN_HANDLER);
 
         try {
             if (client.getServiceTimeout() > 0) {
