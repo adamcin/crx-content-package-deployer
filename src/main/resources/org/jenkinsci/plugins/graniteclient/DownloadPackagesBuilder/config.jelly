@@ -27,14 +27,6 @@
 
 <j:jelly xmlns:j="jelly:core" xmlns:f="/lib/form" xmlns:creds="/lib/credentials">
 
-    <f:entry title="Base URL" field="baseUrl">
-        <f:textbox/>
-    </f:entry>
-
-    <f:entry title="Credentials" field="credentialsId">
-        <creds:select />
-    </f:entry>
-
     <f:entry title="Package ID" field="packageIds">
         <f:expandableTextbox/>
     </f:entry>
@@ -47,7 +39,15 @@
         <f:textbox/>
     </f:entry>
 
-    <f:advanced>
+    <f:advanced title="Connection Options">
+        <f:entry title="Base URL" field="baseUrl">
+            <f:textbox/>
+        </f:entry>
+
+        <f:entry title="Credentials" field="credentialsId">
+            <creds:select />
+        </f:entry>
+
         <f:entry title="Request Timeout" field="requestTimeout">
             <f:number default="0" />
         </f:entry>
@@ -55,8 +55,6 @@
         <f:entry title="Service Timeout" field="serviceTimeout">
             <f:number default="0" />
         </f:entry>
-
     </f:advanced>
-
 
 </j:jelly>

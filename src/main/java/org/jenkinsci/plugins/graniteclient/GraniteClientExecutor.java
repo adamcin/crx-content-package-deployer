@@ -33,7 +33,10 @@ import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredenti
 import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.Realm;
+import com.ning.http.client.Request;
+import com.ning.http.client.RequestBuilderBase;
 import com.ning.http.client.Response;
+import com.ning.http.client.SignatureCalculator;
 import hudson.model.TaskListener;
 import hudson.util.LogTaskListener;
 import net.adamcin.granite.client.packman.async.AsyncPackageManagerClient;
@@ -112,15 +115,19 @@ public final class GraniteClientExecutor {
 
     private static boolean doLoginSignature(AsyncPackageManagerClient client, SSHUserPrivateKey key,
                                    final TaskListener listener) throws IOException {
-        char[] passphrase = null;
-        if (key.getPassphrase() != null) {
-            passphrase = key.getPassphrase().getEncryptedValue().toCharArray();
-        }
 
-        Key sshkey = PEMUtil.readKey(key.getPrivateKey().getBytes("UTF-8"), passphrase);
+        Key sshkey = GraniteNamedIdCredentials.getKeyFromCredentials(key);
         if (sshkey == null) {
             return false;
         }
+
+        /*
+        SignatureCalculator calculator = new SignatureCalculator() {
+            public void calculateAndAddSignature(String url, Request request, RequestBuilderBase<?> requestBuilder) {
+                request.getBodyGenerator().createBody().
+            }
+        }
+        */
 
         KeyId keyId = new UserKeysFingerprintKeyId(key.getUsername());
         Signer signer = new Signer(sshkey, keyId);

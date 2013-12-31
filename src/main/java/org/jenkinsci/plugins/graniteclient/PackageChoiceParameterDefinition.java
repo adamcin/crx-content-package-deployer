@@ -170,6 +170,7 @@ public class PackageChoiceParameterDefinition extends ParameterDefinition {
     private long serviceTimeout;
 
     private boolean multiselect;
+    private long visibleItemCount;
     private boolean excludeNotInstalled;
     private boolean excludeModified;
     private String query;
@@ -179,14 +180,15 @@ public class PackageChoiceParameterDefinition extends ParameterDefinition {
     @DataBoundConstructor
     public PackageChoiceParameterDefinition(String name, String description, String baseUrl, String credentialsId,
                                             long requestTimeout, long serviceTimeout, boolean multiselect,
-                                            boolean excludeNotInstalled, boolean excludeModified, String query,
-                                            String packageIdFilter, String value) {
+                                            boolean excludeNotInstalled, boolean excludeModified, long visibleItemCount,
+                                            String query, String packageIdFilter, String value) {
         super(name, description);
         this.baseUrl = baseUrl;
         this.credentialsId = credentialsId;
         this.requestTimeout = requestTimeout;
         this.serviceTimeout = serviceTimeout;
         this.multiselect = multiselect;
+        this.visibleItemCount = visibleItemCount;
         this.excludeNotInstalled = excludeNotInstalled;
         this.excludeModified = excludeModified;
         this.query = query;
@@ -232,6 +234,18 @@ public class PackageChoiceParameterDefinition extends ParameterDefinition {
 
     public void setMultiselect(boolean multiselect) {
         this.multiselect = multiselect;
+    }
+
+    public long getVisibleItemCount() {
+        if (visibleItemCount <= 0) {
+            return 10;
+        } else {
+            return this.visibleItemCount;
+        }
+    }
+
+    public void setVisibleItemCount(long visibleItemCount) {
+        this.visibleItemCount = visibleItemCount;
     }
 
     public boolean isExcludeNotInstalled() {

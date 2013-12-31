@@ -86,7 +86,7 @@
           tends to lag behind a bit
         -->
         <maven-hpi-plugin.version>1.95</maven-hpi-plugin.version>
-        <httpsig.version>1.0.2</httpsig.version>
+        <httpsig.version>1.0.3-SNAPSHOT</httpsig.version>
     </properties>
 
     <dependencies>

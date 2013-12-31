@@ -39,22 +39,33 @@ import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredenti
 import com.cloudbees.plugins.credentials.domains.DomainCredentials;
 import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import edu.umd.cs.findbugs.annotations.NonNull;
+import net.adamcin.httpsig.api.Key;
+import net.adamcin.httpsig.api.KeyId;
+import net.adamcin.httpsig.ssh.bc.PEMUtil;
+import net.adamcin.httpsig.ssh.jce.FingerprintableKey;
+import net.adamcin.httpsig.ssh.jce.UserKeysFingerprintKeyId;
 
+import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.List;
+import java.util.logging.Logger;
 
 /**
  * Wrapper for {@link SSHUserPrivateKey} credentials implementing {@link IdCredentials} for selection widgets
  */
 abstract class GraniteNamedIdCredentials implements IdCredentials {
+    private static final Logger LOGGER = Logger.getLogger(GraniteNamedIdCredentials.class.getName());
 
     private static final long serialVersionUID = -7611025520557823267L;
 
     public static Credentials getCredentialsById(String credentialsId) {
         CredentialsMatcher matcher = new CredentialsIdMatcher(credentialsId);
         List<Credentials> credentialsList =
-                DomainCredentials.getCredentials(SystemCredentialsProvider.getInstance().getDomainCredentialsMap(),
-                        Credentials.class, Collections.<DomainRequirement>emptyList(), matcher);
+                DomainCredentials.getCredentials(
+                        SystemCredentialsProvider.getInstance().getDomainCredentialsMap(),
+                        Credentials.class, Collections.<DomainRequirement>emptyList(), matcher
+                );
 
         if (!credentialsList.isEmpty()) {
             return credentialsList.iterator().next();
@@ -92,10 +103,18 @@ abstract class GraniteNamedIdCredentials implements IdCredentials {
         }
 
         public String getName() {
-            StringBuilder nameBuilder = new StringBuilder("[Signature] ").append(getDescriptor().getDisplayName());
+            Key key = getKeyFromCredentials(wrapped);
+
+            if (key == null) {
+                return "[Signature] <failed to read SSH key> " + getId();
+            }
+
+            KeyId keyId = new UserKeysFingerprintKeyId(wrapped.getUsername());
+            StringBuilder nameBuilder = new StringBuilder("[Signature] ").append(keyId.getId(key));
             if (wrapped.getDescription() != null && !wrapped.getDescription().trim().isEmpty()) {
                 nameBuilder.append(" (").append(wrapped.getDescription()).append(")");
             }
+
             return nameBuilder.toString();
         }
 
@@ -156,5 +175,21 @@ abstract class GraniteNamedIdCredentials implements IdCredentials {
             }
             return false;
         }
+    }
+
+    public static Key getKeyFromCredentials(SSHUserPrivateKey creds) {
+        try {
+            char[] passphrase = null;
+
+            if (creds.getPassphrase() != null) {
+                passphrase = creds.getPassphrase().getEncryptedValue().toCharArray();
+            }
+
+            return PEMUtil.readKey(creds.getPrivateKey().getBytes(Charset.forName("UTF-8")), passphrase);
+        } catch (IOException e) {
+            LOGGER.severe("[getKeyFromCredentials] failed to read key from SSHUserPrivateKey: " + e.getMessage());
+        }
+
+        return null;
     }
 }

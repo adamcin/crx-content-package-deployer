@@ -27,31 +27,15 @@
 
 <j:jelly xmlns:j="jelly:core" xmlns:f="/lib/form" xmlns:creds="/lib/credentials">
 
-    <f:entry title="Base URL" field="baseUrls">
-        <f:expandableTextbox />
-    </f:entry>
-
-    <f:entry title="Credentials" field="credentialsId">
-        <creds:select />
-    </f:entry>
-
     <f:entry title="Package ID" field="packageIdFilters">
         <f:expandableTextbox/>
     </f:entry>
 
-    <f:entry title="Local Directory" field="localDirectory">
-        <f:textbox/>
-    </f:entry>
+    <f:advanced title="Package Installation Options">
+        <f:entry title="Existing package behavior" field="behavior">
+            <f:select />
+        </f:entry>
 
-    <f:entry title="Existing package behavior" field="behavior">
-        <f:select />
-    </f:entry>
-
-    <f:entry title="Disable for Job Testing" field="disableForJobTesting">
-        <f:checkbox />
-    </f:entry>
-
-    <f:advanced>
         <f:entry title="Install sub-packages" field="recursive">
             <f:checkbox />
         </f:entry>
@@ -63,6 +47,24 @@
         <f:entry title="Auto Save" field="autosave">
             <f:number default="1024" />
         </f:entry>
+    </f:advanced>
+
+    <f:entry title="Local Directory" field="localDirectory">
+        <f:textbox/>
+    </f:entry>
+
+    <f:entry title="Disable for Job Testing" field="disableForJobTesting">
+        <f:checkbox />
+    </f:entry>
+
+    <f:advanced title="Connection Options">
+        <f:entry title="Base URL" field="baseUrls">
+            <f:expandableTextbox />
+        </f:entry>
+
+        <f:entry title="Credentials" field="credentialsId">
+            <creds:select />
+        </f:entry>
 
         <f:entry title="Request Timeout" field="requestTimeout">
             <f:number default="0" />
@@ -71,8 +73,6 @@
         <f:entry title="Service Timeout" field="serviceTimeout">
             <f:number default="0" />
         </f:entry>
-
     </f:advanced>
-
 
 </j:jelly>
