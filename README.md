@@ -14,3 +14,5 @@ execution
 
 1. The multiselect-enabled Package Choice Parameter allows for execution of parameterized builds using a selection
 widget populated with a list of packages retrieved from a CRX server.
+
+[![Analytics](https://ga-beacon.appspot.com/UA-37073514-2/crx-content-package-deployer/blob/master/README.md)](https://github.com/igrigorik/ga-beacon)
