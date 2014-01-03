@@ -32,9 +32,6 @@ import com.cloudbees.plugins.credentials.Credentials;
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
 import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.AsyncHttpClient;
-import com.ning.http.client.Realm;
-import com.ning.http.client.Request;
-import com.ning.http.client.RequestBuilderBase;
 import com.ning.http.client.Response;
 import com.ning.http.client.SignatureCalculator;
 import hudson.model.TaskListener;
@@ -44,7 +41,7 @@ import net.adamcin.httpsig.api.Key;
 import net.adamcin.httpsig.api.KeyId;
 import net.adamcin.httpsig.api.Signer;
 import net.adamcin.httpsig.http.ning.AsyncUtil;
-import net.adamcin.httpsig.ssh.bc.PEMUtil;
+import net.adamcin.httpsig.http.ning.ContentSignatureCalculator;
 import net.adamcin.httpsig.ssh.jce.UserKeysFingerprintKeyId;
 
 import java.io.IOException;
@@ -74,7 +71,8 @@ public final class GraniteClientExecutor {
         return execute(callable, config, null);
     }
 
-    public static <T> T execute(PackageManagerClientCallable<T> callable, GraniteClientConfig config, TaskListener _listener) throws Exception {
+    public static <T> T execute(PackageManagerClientCallable<T> callable, GraniteClientConfig config,
+                                TaskListener _listener) throws Exception {
         final TaskListener listener = _listener != null ? _listener : DEFAULT_LISTENER;
         GraniteAHCFactory ahcFactory = GraniteAHCFactory.getFactoryInstance();
 
@@ -102,6 +100,8 @@ public final class GraniteClientExecutor {
         final Credentials _creds = credentials != null ? credentials :
                 GraniteAHCFactory.getFactoryInstance().getDefaultCredentials();
 
+        client.getClient().setSignatureCalculator(new ContentSignatureCalculator());
+
         if (_creds instanceof SSHUserPrivateKey) {
             return doLoginSignature(client, (SSHUserPrivateKey) _creds, listener);
         } else if (_creds instanceof StandardUsernamePasswordCredentials) {
@@ -114,25 +114,24 @@ public final class GraniteClientExecutor {
     }
 
     private static boolean doLoginSignature(AsyncPackageManagerClient client, SSHUserPrivateKey key,
-                                   final TaskListener listener) throws IOException {
+                                            final TaskListener listener) throws IOException {
 
         Key sshkey = GraniteNamedIdCredentials.getKeyFromCredentials(key);
         if (sshkey == null) {
             return false;
         }
 
-        /*
-        SignatureCalculator calculator = new SignatureCalculator() {
-            public void calculateAndAddSignature(String url, Request request, RequestBuilderBase<?> requestBuilder) {
-                request.getBodyGenerator().createBody().
-            }
-        }
-        */
+        SignatureCalculator calculator = new ContentSignatureCalculator();
 
         KeyId keyId = new UserKeysFingerprintKeyId(key.getUsername());
         Signer signer = new Signer(sshkey, keyId);
-        Future<Boolean> fResponse = AsyncUtil.login(client.getClient(),
-                signer, client.getClient().prepareGet(client.getBaseUrl() + "?sling:authRequestLogin=Signature&j_validate=true").build(), LOGIN_HANDLER);
+        Future<Boolean> fResponse = AsyncUtil.login(
+                client.getClient(),
+                signer, client.getClient().prepareGet(
+                client.getBaseUrl() + "?sling:authRequestLogin=Signature&j_validate=true"
+        ).build(),
+                LOGIN_HANDLER, calculator
+        );
 
         try {
             if (client.getServiceTimeout() > 0) {
@@ -146,7 +145,7 @@ public final class GraniteClientExecutor {
     }
 
     private static boolean doLoginPOST(AsyncPackageManagerClient client, String username, String password,
-                                        final TaskListener listener) throws IOException {
+                                       final TaskListener listener) throws IOException {
         return client.login(username, password);
     }
 
@@ -165,4 +164,5 @@ public final class GraniteClientExecutor {
             asyncHttpClient.closeAsynchronously();
         }
     }
+
 }
