@@ -17,12 +17,19 @@ execution
 1. The multiselect-enabled Package Choice Parameter allows for execution of parameterized builds using a selection
 widget populated with a list of packages retrieved from a CRX server.
 
-Screenshots
------------
+# Components
 
 ## CRX Content Package Choice Parameter
 
+### Summary
+
+The CRX Content Package Choice Parameter is a build parameter which allows a user to select any number of content
+packages available for download from a CRX server as as a valid, newline-separated Package Id field value, which can
+then be used in other components provided by this plugin.
+
 ### Configuration
+
+
 
 ![CRX Content Package Choice Parameter Configuration](https://github.com/adamcin/crx-content-package-deployer/raw/master/src/site/resources/images/package-choice-parameter-config.png "CRX Content Package Choice Parameter Configuration")
 
