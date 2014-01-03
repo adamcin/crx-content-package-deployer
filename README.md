@@ -46,5 +46,9 @@ Screenshots
 
 ![Deploy Content Packages to CRX - Configuration](https://github.com/adamcin/crx-content-package-deployer/raw/master/src/site/resources/images/deploy-content-packages-config.png "Deploy Content Packages to CRX - Configuration")
 
+### Console Output
+
+![Deploy Content Packages to CRX - Console Output](https://github.com/adamcin/crx-content-package-deployer/raw/master/src/site/resources/images/deploy-content-packages-console.png "Deploy Content Packages to CRX - Console Output")
+
 
 [![Analytics](https://ga-beacon.appspot.com/UA-37073514-2/crx-content-package-deployer/raw/master/README.md)](https://github.com/igrigorik/ga-beacon)
