@@ -86,14 +86,14 @@
           tends to lag behind a bit
         -->
         <maven-hpi-plugin.version>1.95</maven-hpi-plugin.version>
-        <httpsig.version>1.0.3-SNAPSHOT</httpsig.version>
+        <httpsig.version>1.0.4</httpsig.version>
     </properties>
 
     <dependencies>
         <dependency>
             <groupId>net.adamcin.granite</groupId>
             <artifactId>granite-client-packman</artifactId>
-            <version>0.6.3-SNAPSHOT</version>
+            <version>0.6.4</version>
         </dependency>
         <dependency>
             <groupId>net.adamcin.httpsig</groupId>
