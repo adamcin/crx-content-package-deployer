@@ -18,16 +18,25 @@ widget populated with a list of packages retrieved from a CRX server.
 Screenshots
 -----------
 
-### CRX Package Choice Parameter
+## CRX Content Package Choice Parameter
 
-![CRX Package Choice Parameter Configuration](https://github.com/adamcin/crx-content-package-deployer/raw/master/src/site/resources/images/package-choice-parameter-config.png "CRX Package Choice Parameter Configuration")
+### Configuration
 
-![CRX Package Choice Parameter Build](https://github.com/adamcin/crx-content-package-deployer/raw/master/src/site/resources/images/package-choice-parameter.png "CRX Package Choice Parameter Build")
+![CRX Content Package Choice Parameter Configuration](https://github.com/adamcin/crx-content-package-deployer/raw/master/src/site/resources/images/package-choice-parameter-config.png "CRX Content Package Choice Parameter Configuration")
 
-### Download Content Packages from CRX
+### Build with Parameters
+
+![CRX Content Package Choice Parameter Build](https://github.com/adamcin/crx-content-package-deployer/raw/master/src/site/resources/images/package-choice-parameter.png "CRX Content Package Choice Parameter Build")
+
+## Download Content Packages from CRX
+
+### Configuration
 
 ![Download content packages from CRX - Configuration](https://github.com/adamcin/crx-content-package-deployer/raw/master/src/site/resources/images/download-content-packages-config.png "Download content packages from CRX - Configuration")
 
+### Console Output
+
 ![Download content packages from CRX - Configuration](https://github.com/adamcin/crx-content-package-deployer/raw/master/src/site/resources/images/download-content-packages-console.png "Download content packages from CRX - Console Output")
+
 
 [![Analytics](https://ga-beacon.appspot.com/UA-37073514-2/crx-content-package-deployer/raw/master/README.md)](https://github.com/igrigorik/ga-beacon)
