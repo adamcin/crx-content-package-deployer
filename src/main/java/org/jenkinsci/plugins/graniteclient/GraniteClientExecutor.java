@@ -41,7 +41,6 @@ import net.adamcin.httpsig.api.Key;
 import net.adamcin.httpsig.api.KeyId;
 import net.adamcin.httpsig.api.Signer;
 import net.adamcin.httpsig.http.ning.AsyncUtil;
-import net.adamcin.httpsig.http.ning.ContentSignatureCalculator;
 import net.adamcin.httpsig.ssh.jce.UserKeysFingerprintKeyId;
 
 import java.io.IOException;
@@ -100,8 +99,6 @@ public final class GraniteClientExecutor {
         final Credentials _creds = credentials != null ? credentials :
                 GraniteAHCFactory.getFactoryInstance().getDefaultCredentials();
 
-        client.getClient().setSignatureCalculator(new ContentSignatureCalculator());
-
         if (_creds instanceof SSHUserPrivateKey) {
             return doLoginSignature(client, (SSHUserPrivateKey) _creds, listener);
         } else if (_creds instanceof StandardUsernamePasswordCredentials) {
@@ -121,17 +118,13 @@ public final class GraniteClientExecutor {
             return false;
         }
 
-        SignatureCalculator calculator = new ContentSignatureCalculator();
-
         KeyId keyId = new UserKeysFingerprintKeyId(key.getUsername());
         Signer signer = new Signer(sshkey, keyId);
         Future<Boolean> fResponse = AsyncUtil.login(
                 client.getClient(),
                 signer, client.getClient().prepareGet(
                 client.getBaseUrl() + "?sling:authRequestLogin=Signature&j_validate=true"
-        ).build(),
-                LOGIN_HANDLER, calculator
-        );
+        ).build(), LOGIN_HANDLER);
 
         try {
             if (client.getServiceTimeout() > 0) {
