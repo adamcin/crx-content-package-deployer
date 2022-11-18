@@ -50,6 +50,7 @@ import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.FileSystems;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.security.MessageDigest;
@@ -132,7 +133,7 @@ public class ContentSignatureCalculator implements SignatureCalculator {
         File tempFile = null;
         OutputStream os = null;
         try {
-            tempFile = File.createTempFile("crxPartBase", ".dat");
+            tempFile = Files.createTempFile("crxPartBase", ".dat").toFile();
             os = new BufferedOutputStream(new FileOutputStream(tempFile));
 
             entityWriter.writeEntity(os);
@@ -154,7 +155,7 @@ public class ContentSignatureCalculator implements SignatureCalculator {
             File tempFile = null;
             OutputStream os = null;
             try {
-                tempFile = File.createTempFile("crxPartBase", ".dat");
+                tempFile = Files.createTempFile("crxPartBase", ".dat").toFile();
                 os = new BufferedOutputStream(new FileOutputStream(tempFile));
 
                 part.send(os);
